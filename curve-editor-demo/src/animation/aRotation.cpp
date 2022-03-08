@@ -12,269 +12,293 @@ enum { VX, VY, VZ, VW };
 #pragma warning(disable : 4244)
 
 // CONSTRUCTORS
-mat3::mat3() 
+mat3::mat3()
 {
-    mM[0] = vec3(0.0f,0.0f,0.0f);
+    mM[0] = vec3(0.0f, 0.0f, 0.0f);
     mM[1] = mM[2] = mM[0];
 }
 
 mat3::mat3(const vec3& v0, const vec3& v1, const vec3& v2)
-{ 
-    mM[0] = v0; mM[1] = v1; mM[2] = v2; 
+{
+    mM[0] = v0; mM[1] = v1; mM[2] = v2;
 }
 
 mat3::mat3(double d)
-{ 
-    mM[0] = mM[1] = mM[2] = vec3(d); 
+{
+    mM[0] = mM[1] = mM[2] = vec3(d);
 }
 
 mat3::mat3(const mat3& m)
-{ 
-    mM[0] = m.mM[0]; mM[1] = m.mM[1]; mM[2] = m.mM[2]; 
-}
-
-
- void mat3::Identity()
 {
-	 vec3 v0; // constructor intializes all values to zero
-	 mM[0] = v0; mM[1] = v0; mM[2] = v0;
-	 for (int i = 0; i < 3; i++)
-		 mM[i][i] = 1.0;
+    mM[0] = m.mM[0]; mM[1] = m.mM[1]; mM[2] = m.mM[2];
 }
- void mat3::Zero()
- {
-	 vec3 v0; // constructor intializes all values to zero
-	 mM[0] = v0; mM[1] = v0; mM[2] = v0;
- }
+
+
+void mat3::Identity()
+{
+    vec3 v0; // constructor intializes all values to zero
+    mM[0] = v0; mM[1] = v0; mM[2] = v0;
+    for (int i = 0; i < 3; i++)
+        mM[i][i] = 1.0;
+}
+void mat3::Zero()
+{
+    vec3 v0; // constructor intializes all values to zero
+    mM[0] = v0; mM[1] = v0; mM[2] = v0;
+}
 
 mat3 mat3::Rotation3D(const vec3& axis, double angleRad)
 {
-	double c = cos(angleRad), s = sin(angleRad), t = 1.0f - c;
-	vec3 Axis = axis;
-	Axis.Normalize();
-	return mat3(vec3(t * Axis[VX] * Axis[VX] + c,
-		t * Axis[VX] * Axis[VY] - s * Axis[VZ],
-		t * Axis[VX] * Axis[VZ] + s * Axis[VY]),
-		vec3(t * Axis[VX] * Axis[VY] + s * Axis[VZ],
-		t * Axis[VY] * Axis[VY] + c,
-		t * Axis[VY] * Axis[VZ] - s * Axis[VX]),
-		vec3(t * Axis[VX] * Axis[VZ] - s * Axis[VY],
-		t * Axis[VY] * Axis[VZ] + s * Axis[VX],
-		t * Axis[VZ] * Axis[VZ] + c)
-		);
+    double c = cos(angleRad), s = sin(angleRad), t = 1.0f - c;
+    vec3 Axis = axis;
+    Axis.Normalize();
+    return mat3(vec3(t * Axis[VX] * Axis[VX] + c,
+        t * Axis[VX] * Axis[VY] - s * Axis[VZ],
+        t * Axis[VX] * Axis[VZ] + s * Axis[VY]),
+        vec3(t * Axis[VX] * Axis[VY] + s * Axis[VZ],
+            t * Axis[VY] * Axis[VY] + c,
+            t * Axis[VY] * Axis[VZ] - s * Axis[VX]),
+        vec3(t * Axis[VX] * Axis[VZ] - s * Axis[VY],
+            t * Axis[VY] * Axis[VZ] + s * Axis[VX],
+            t * Axis[VZ] * Axis[VZ] + c)
+    );
 }
 
 mat3 mat3::Rotation3D(const int Axis, double angleRad)
 {
-	mat3 m;
-	switch (Axis)
-	{
-	case VX: m = Rotation3D(axisX, angleRad);
-		break;
-	case VY: m = Rotation3D(axisY, angleRad);
-		break;
-	case VZ: m = Rotation3D(axisZ, angleRad);
-		break;
-	}
-	return m;
+    mat3 m;
+    switch (Axis)
+    {
+    case VX: m = Rotation3D(axisX, angleRad);
+        break;
+    case VY: m = Rotation3D(axisY, angleRad);
+        break;
+    case VZ: m = Rotation3D(axisZ, angleRad);
+        break;
+    }
+    return m;
 }
 
 bool mat3::ToEulerAngles(RotOrder order, vec3& angleRad) const
 {
-	bool result;
-	switch (order)
-	{
-	case ZYX:
-		angleRad[VY] = -asin(mM[2][0]);
-		if (angleRad[VY] > -M_PI_2 + EPSILON)
-		{
-			if (angleRad[VY] < M_PI_2 - EPSILON)
-			{
-				angleRad[VZ] = atan2(mM[1][0], mM[0][0]);
-				angleRad[VX] = atan2(mM[2][1], mM[2][2]);
-				result = true;
-			}
-			else
-			{
-				// WARNING.  Not a unique solution.
-				angleRad[VX] = 0.0f;
-				angleRad[VZ] = atan2(-mM[0][1], mM[0][2]);
-				result = false;
-			}
-		}
-		else
-		{
-			// WARNING.  Not a unique solution.
-			angleRad[VX] = 0.0f;
-			angleRad[VZ] = atan2(mM[0][1], mM[0][2]);
-			result = false;
-		}
-		break;
-	case XYZ:
-		angleRad[VY] = asin(mM[0][2]);
-		if (angleRad[VY] > -M_PI_2 + EPSILON)
-		{
-			if (angleRad[VY] < M_PI_2 - EPSILON)
-			{
-				angleRad[VX] = atan2(-mM[1][2], mM[2][2]);
-				angleRad[VZ] = atan2(-mM[0][1], mM[0][0]);
-				result = true;
-			}
-			else
-			{
-				// WARNING.  Not a unique solution.
-				angleRad[VZ] = 0.0f;
-				angleRad[VX] = atan2(mM[1][0], mM[1][1]);
-				result = false;
-			}
-		}
-		else
-		{
-			// WARNING.  Not a unique solution.
-			angleRad[VZ] = 0.0f;  // any angle works
-			angleRad[VX] = -atan2(mM[1][0], mM[1][1]);
-			result = false;
-		}
-		break;
-	case YZX:
-		angleRad[VZ] = asin(mM[1][0]);
-		if (angleRad[VZ] > -M_PI_2 + EPSILON)
-		{
-			if (angleRad[VZ] < M_PI_2 - EPSILON)
-			{
-				angleRad[VY] = atan2(-mM[2][0], mM[0][0]);
-				angleRad[VX] = atan2(-mM[1][2], mM[1][1]);
-				result = true;
-			}
-			else
-			{
-				// WARNING.  Not a unique solution.
-				angleRad[VX] = 0.0f;
-				angleRad[VY] = atan2(mM[2][1], mM[2][2]);
-				result = false;
-			}
-		}
-		else
-		{
-			// WARNING.  Not a unique solution.
-			angleRad[VX] = 0.0f;
-			angleRad[VY] = -atan2(mM[2][1], mM[2][2]);
-			result = false;
-		}
+    bool result;
+    switch (order)
+    {
+    case ZYX:
+        angleRad[VY] = -asin(mM[2][0]);
+        if (angleRad[VY] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VY] < M_PI_2 - EPSILON)
+            {
+                angleRad[VZ] = atan2(mM[1][0], mM[0][0]);
+                angleRad[VX] = atan2(mM[2][1], mM[2][2]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VX] = 0.0f;
+                angleRad[VZ] = atan2(-mM[0][1], mM[0][2]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.
+            angleRad[VX] = 0.0f;
+            angleRad[VZ] = atan2(mM[0][1], mM[0][2]);
+            result = false;
+        }
+        break;
+    case XYZ:
+        angleRad[VY] = asin(mM[0][2]);
+        if (angleRad[VY] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VY] < M_PI_2 - EPSILON)
+            {
+                angleRad[VX] = atan2(-mM[1][2], mM[2][2]);
+                angleRad[VZ] = atan2(-mM[0][1], mM[0][0]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VZ] = 0.0f;
+                angleRad[VX] = atan2(mM[1][0], mM[1][1]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.     
+            angleRad[VZ] = 0.0f;  // any angle works
+            angleRad[VX] = -atan2(mM[1][0], mM[1][1]);
+            result = false;
+        }
+        break;
+    case YZX:
+        angleRad[VZ] = asin(mM[1][0]);
+        if (angleRad[VZ] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VZ] < M_PI_2 - EPSILON)
+            {
+                angleRad[VY] = atan2(-mM[2][0], mM[0][0]);
+                angleRad[VX] = atan2(-mM[1][2], mM[1][1]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VX] = 0.0f;
+                angleRad[VY] = atan2(mM[2][1], mM[2][2]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.
+            angleRad[VX] = 0.0f;
+            angleRad[VY] = -atan2(mM[2][1], mM[2][2]);
+            result = false;
+        }
 
-		break;
-	case XZY:
-		angleRad[VZ] = asin(-mM[0][1]);
-		if (angleRad[VZ] > -M_PI_2 + EPSILON)
-		{
-			if (angleRad[VZ] < M_PI_2 - EPSILON)
-			{
-				angleRad[VX] = atan2(mM[2][1], mM[1][1]);
-				angleRad[VY] = atan2(mM[0][2], mM[0][0]);
-				result = true;
-			}
-			else
-			{
-				// WARNING.  Not a unique solution.
-				angleRad[VY] = 0.0f;  // any angle works
-				angleRad[VX] = atan2(mM[2][0], mM[2][2]);
-				result = false;
-			}
-		}
-		else
-		{
-			// WARNING.  Not a unique solution.
-			angleRad[VY] = 0.0f;
-			angleRad[VX] = -atan2(mM[2][0], mM[2][2]);
-			result = false;
-		}
-		break;
-	case ZXY:
-		angleRad[VX] = asin(mM[2][1]);
-		if (angleRad[VX] > -M_PI_2 + EPSILON)
-		{
-			if (angleRad[VX] < M_PI_2 - EPSILON)
-			{
-				angleRad[VZ] = atan2(-mM[0][1], mM[1][1]);
-				angleRad[VY] = atan2(-mM[2][0], mM[2][2]);
-				result = true;
-			}
-			else
-			{
-				// WARNING.  Not a unique solution.
-				angleRad[VY] = 0.0f;
-				angleRad[VZ] = atan2(mM[0][2], mM[0][0]);
-				result = false;
-			}
-		}
-		else
-		{
-			// WARNING.  Not a unique solution.
-			angleRad[VY] = 0.0f;
-			angleRad[VZ] = -atan2(mM[0][2], mM[0][0]);
-			result = false;
-		}
+        break;
+    case XZY:
+        angleRad[VZ] = asin(-mM[0][1]);
+        if (angleRad[VZ] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VZ] < M_PI_2 - EPSILON)
+            {
+                angleRad[VX] = atan2(mM[2][1], mM[1][1]);
+                angleRad[VY] = atan2(mM[0][2], mM[0][0]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VY] = 0.0f;  // any angle works
+                angleRad[VX] = atan2(mM[2][0], mM[2][2]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.
+            angleRad[VY] = 0.0f;
+            angleRad[VX] = -atan2(mM[2][0], mM[2][2]);
+            result = false;
+        }
+        break;
+    case ZXY:
+        angleRad[VX] = asin(mM[2][1]);
+        if (angleRad[VX] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VX] < M_PI_2 - EPSILON)
+            {
+                angleRad[VZ] = atan2(-mM[0][1], mM[1][1]);
+                angleRad[VY] = atan2(-mM[2][0], mM[2][2]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VY] = 0.0f;
+                angleRad[VZ] = atan2(mM[0][2], mM[0][0]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.
+            angleRad[VY] = 0.0f;
+            angleRad[VZ] = -atan2(mM[0][2], mM[0][0]);
+            result = false;
+        }
 
-		break;
+        break;
 
-	case YXZ:
-		//TODO: student implementation for computing Euler angles from a rotation matrix with an YXZ order of rotation goes here
-		angleRad = vec3(0.0, 0.0, 0.0);
-		result = false;
-
-		break;
-	}
-	return result;
+    case YXZ:
+        //TODO: student implementation for computing Euler angles from a rotation matrix with an YXZ order of rotation goes here
+        angleRad[VX] = asin(-mM[1][2]);
+        if (angleRad[VX] > -M_PI_2 + EPSILON)
+        {
+            if (angleRad[VX] < M_PI_2 - EPSILON)
+            {
+                angleRad[VZ] = atan2(mM[1][0], mM[1][1]);
+                angleRad[VY] = atan2(mM[0][2], mM[2][2]);
+                result = true;
+            }
+            else
+            {
+                // WARNING.  Not a unique solution.
+                angleRad[VZ] = 0.0f;
+                angleRad[VY] = atan2(-mM[0][1], mM[0][0]);
+                result = false;
+            }
+        }
+        else
+        {
+            // WARNING.  Not a unique solution.
+            angleRad[VZ] = 0.0f;
+            angleRad[VY] = -atan2(-mM[0][1], mM[0][0]);
+            result = false;
+        }
+        break;
+    }
+    return result;
 }
 
 
 mat3 mat3::FromEulerAngles(RotOrder order, const vec3& anglesRad)
 {
-	mat3 m;
-	switch (order)
-	{
-	case ZYX:
-		m = mat3::Rotation3D(axisZ, anglesRad[VZ])
-			* mat3::Rotation3D(axisY, anglesRad[VY])
-			* mat3::Rotation3D(axisX, anglesRad[VX]);
+    mat3 m;
+    switch (order)
+    {
+    case ZYX:
+        m = mat3::Rotation3D(axisZ, anglesRad[VZ])
+            * mat3::Rotation3D(axisY, anglesRad[VY])
+            * mat3::Rotation3D(axisX, anglesRad[VX]);
 
-		break;
-	case XYZ:
-		m = mat3::Rotation3D(axisX, anglesRad[VX])
-			* mat3::Rotation3D(axisY, anglesRad[VY])
-			* mat3::Rotation3D(axisZ, anglesRad[VZ]);
+        break;
+    case XYZ:
+        m = mat3::Rotation3D(axisX, anglesRad[VX])
+            * mat3::Rotation3D(axisY, anglesRad[VY])
+            * mat3::Rotation3D(axisZ, anglesRad[VZ]);
 
-		break;
-	case YZX:
-		m = mat3::Rotation3D(axisY, anglesRad[VY])
-			* mat3::Rotation3D(axisZ, anglesRad[VZ])
-			* mat3::Rotation3D(axisX, anglesRad[VX]);
+        break;
+    case YZX:
+        m = mat3::Rotation3D(axisY, anglesRad[VY])
+            * mat3::Rotation3D(axisZ, anglesRad[VZ])
+            * mat3::Rotation3D(axisX, anglesRad[VX]);
 
-		break;
-	case XZY:
-		m = mat3::Rotation3D(axisX, anglesRad[VX])
-			* mat3::Rotation3D(axisZ, anglesRad[VZ])
-			* mat3::Rotation3D(axisY, anglesRad[VY]);
-		break;
-	case ZXY:
-		m = mat3::Rotation3D(axisZ, anglesRad[VZ])
-			* mat3::Rotation3D(axisX, anglesRad[VX])
-			* mat3::Rotation3D(axisY, anglesRad[VY]);
-		break;
+        break;
+    case XZY:
+        m = mat3::Rotation3D(axisX, anglesRad[VX])
+            * mat3::Rotation3D(axisZ, anglesRad[VZ])
+            * mat3::Rotation3D(axisY, anglesRad[VY]);
+        break;
+    case ZXY:
+        m = mat3::Rotation3D(axisZ, anglesRad[VZ])
+            * mat3::Rotation3D(axisX, anglesRad[VX])
+            * mat3::Rotation3D(axisY, anglesRad[VY]);
+        break;
 
-	case YXZ:
-		//TODO: student implementation for computing rotation matrix for YXZ order of rotation goes here
-		m.Identity();
+    case YXZ:
+        //TODO: student implementation for computing rotation matrix for YXZ order of rotation goes here
+        m = mat3::Rotation3D(axisY, anglesRad[VY])
+            * mat3::Rotation3D(axisX, anglesRad[VX])
+            * mat3::Rotation3D(axisZ, anglesRad[VZ]);
+        break;
 
-		break;
-	}
-	*this = m;
-	return m;
+        break;
+    }
+    *this = m;
+    return m;
 }
 
-mat3 mat3::FromLocalAxis(const vec3 & right, const vec3 & up, const vec3 & forward)
+mat3 mat3::FromLocalAxis(const vec3& right, const vec3& up, const vec3& forward)
 {
-	return mat3(right, up, forward).Transpose();
+    return mat3(right, up, forward).Transpose();
 }
 
 bool mat3::Reorthogonalize()
@@ -301,7 +325,7 @@ bool mat3::Reorthogonalize()
 
     // unitize column 0
     double fLength = sqrt(mM[0][0] * mM[0][0] + mM[1][0] * mM[1][0] + mM[2][0] * mM[2][0]);
-    if ( fLength < fEpsilon )
+    if (fLength < fEpsilon)
         return false;
     double fInvLength = 1.0f / fLength;
     mM[0][0] *= fInvLength;
@@ -316,9 +340,9 @@ bool mat3::Reorthogonalize()
 
     // unitize column 1
     fLength = sqrt(mM[0][1] * mM[0][1] + mM[1][1] * mM[1][1] + mM[2][1] * mM[2][1]);
-    if ( fLength < fEpsilon )
+    if (fLength < fEpsilon)
         return false;
-    fInvLength = 1.0f/fLength;
+    fInvLength = 1.0f / fLength;
     mM[0][1] *= fInvLength;
     mM[1][1] *= fInvLength;
     mM[2][1] *= fInvLength;
@@ -337,7 +361,7 @@ bool mat3::Reorthogonalize()
 
     // unitize column 2
     fLength = sqrt(mM[0][2] * mM[0][2] + mM[1][2] * mM[1][2] + mM[2][2] * mM[2][2]);
-    if ( fLength < fEpsilon )
+    if (fLength < fEpsilon)
         return false;
     fInvLength = 1.0f / fLength;
     mM[0][2] *= fInvLength;
@@ -378,21 +402,21 @@ void mat3::ToAxisAngle(vec3& axis, double& angleRad) const
     //   cos(A) = (trace(R)-1)/2  and  R - R^t = 2*sin(A)*P
 
     double fTrace = mM[0][0] + mM[1][1] + mM[2][2];
-    angleRad = acos( 0.5f * (fTrace - 1.0f));
+    angleRad = acos(0.5f * (fTrace - 1.0f));
 
     axis[VX] = mM[1][2] - mM[2][1];
     axis[VY] = mM[2][0] - mM[0][2];
     axis[VZ] = mM[0][1] - mM[1][0];
     double fLength = axis.Length();
     const double fEpsilon = 1e-06f;
-    if ( fLength > fEpsilon )
+    if (fLength > fEpsilon)
     {
         double fInvLength = 1.0f / fLength;
         axis *= -fInvLength;
     }
     else  // angle is 0 or pi
     {
-        if ( angleRad > 1.0f )  // any number strictly between 0 and pi works
+        if (angleRad > 1.0f)  // any number strictly between 0 and pi works
         {
             // angle must be pi
             axis[VX] = sqrt(0.5f * (1.0f + mM[0][0]));
@@ -405,10 +429,10 @@ void mat3::ToAxisAngle(vec3& axis, double& angleRad) const
             ty = mM[1][0] * axis[VX] + mM[1][1] * axis[VY] + mM[1][2] * axis[VZ] - axis[VY];
             tz = mM[2][0] * axis[VX] + mM[2][1] * axis[VY] + mM[2][2] * axis[VZ] - axis[VZ];
             fLength = tx * tx + ty * ty + tz * tz;
-            if ( fLength < fEpsilon )
+            if (fLength < fEpsilon)
             {
-               axis = -axis;
-               return;
+                axis = -axis;
+                return;
             }
 
             axis[VZ] = -axis[VZ];
@@ -416,10 +440,10 @@ void mat3::ToAxisAngle(vec3& axis, double& angleRad) const
             ty = mM[1][0] * axis[VX] + mM[1][1] * axis[VY] + mM[1][2] * axis[VZ] - axis[VY];
             tz = mM[2][0] * axis[VX] + mM[2][1] * axis[VY] + mM[2][2] * axis[VZ] - axis[VZ];
             fLength = tx * tx + ty * ty + tz * tz;
-            if ( fLength < fEpsilon )
+            if (fLength < fEpsilon)
             {
-               axis = -axis;
-               return;
+                axis = -axis;
+                return;
             }
 
             axis[VY] = -axis[VY];
@@ -427,10 +451,10 @@ void mat3::ToAxisAngle(vec3& axis, double& angleRad) const
             ty = mM[1][0] * axis[VX] + mM[1][1] * axis[VY] + mM[1][2] * axis[VZ] - axis[VY];
             tz = mM[2][0] * axis[VX] + mM[2][1] * axis[VY] + mM[2][2] * axis[VZ] - axis[VZ];
             fLength = tx * tx + ty * ty + tz * tz;
-            if ( fLength < fEpsilon )
+            if (fLength < fEpsilon)
             {
-               axis = -axis;
-               return;
+                axis = -axis;
+                return;
             }
         }
         else
@@ -447,17 +471,17 @@ void mat3::ToAxisAngle(vec3& axis, double& angleRad) const
 
 mat3 mat3::FromToRotation(const vec3& fromDir, const vec3& toDir)
 {
-	
+
     vec3 dir1 = fromDir;
     vec3 dir2 = toDir;
     dir1.Normalize();
     dir2.Normalize();
     vec3 axis = dir1.Cross(dir2);
-	axis.Normalize();
+    axis.Normalize();
 
-	double cosangle = dir1*dir2;
-	cosangle = std::min(1.0, std::max(-1.0, cosangle));  //check to make sure cosangle ranges from -1 to 1
-	double angle = acos(cosangle);
+    double cosangle = dir1 * dir2;
+    cosangle = std::min(1.0, std::max(-1.0, cosangle));  //check to make sure cosangle ranges from -1 to 1
+    double angle = acos(cosangle);
 
     mat3 mat;
     mat.FromAxisAngle(axis, angle);
@@ -469,15 +493,15 @@ mat3 mat3::FromToRotation(const vec3& fromDir, const vec3& toDir)
 mat3 mat3::Inverse() const    // Gauss-Jordan elimination with partial pivoting
 {
     mat3 a(*this),        // As a evolves from original mat into identity
-    b(IdentityMat3);   // b evolves from identity into inverse(a)
+        b(IdentityMat3);   // b evolves from identity into inverse(a)
     int     i, j, i1;
 
     // Loop over cols of a from left to right, eliminating above and below diag
-    for (j=0; j<3; j++) {   // Find largest pivot in column j among rows j..2
+    for (j = 0; j < 3; j++) {   // Find largest pivot in column j among rows j..2
         i1 = j;    	    // Row with largest pivot candidate
-        for (i=j+1; i<3; i++)
+        for (i = j + 1; i < 3; i++)
             if (fabs(a.mM[i].n[j]) > fabs(a.mM[i1].n[j]))
-            	i1 = i;
+                i1 = i;
 
         // Swap rows i1 and j in a and b to put pivot on diagonal
         Swap(a.mM[i1], a.mM[j]);
@@ -493,11 +517,11 @@ mat3 mat3::Inverse() const    // Gauss-Jordan elimination with partial pivoting
         a.mM[j] /= a.mM[j].n[j];
 
         // Eliminate off-diagonal elements in col j of a, doing identical ops to b
-        for (i=0; i<3; i++)
-            if (i!=j) 
+        for (i = 0; i < 3; i++)
+            if (i != j)
             {
-            	b.mM[i] -= a.mM[i].n[j]*b.mM[j];
-            	a.mM[i] -= a.mM[i].n[j]*a.mM[j];
+                b.mM[i] -= a.mM[i].n[j] * b.mM[j];
+                a.mM[i] -= a.mM[i].n[j] * a.mM[j];
             }
     }
     return b;
@@ -511,43 +535,43 @@ void mat3::FromAxisAngle(const vec3& axis, double angleRad)
 
 // ASSIGNMENT OPERATORS
 
-mat3& mat3::operator = ( const mat3& m )
-{ 
-    mM[0] = m.mM[0]; mM[1] = m.mM[1]; mM[2] = m.mM[2]; 
-    return *this; 
-}
-
-mat3& mat3::operator += ( const mat3& m )
-{ 
-    mM[0] += m.mM[0]; mM[1] += m.mM[1]; mM[2] += m.mM[2]; 
-    return *this; 
-}
-
-mat3& mat3::operator -= ( const mat3& m )
-{ 
-    mM[0] -= m.mM[0]; mM[1] -= m.mM[1]; mM[2] -= m.mM[2]; 
-    return *this; 
-}
-
-mat3& mat3::operator *= ( double d )
-{ 
-    mM[0] *= d; mM[1] *= d; mM[2] *= d; 
-    return *this; 
-}
-
-mat3& mat3::operator /= ( double d )
-{ 
-    mM[0] /= d; mM[1] /= d; mM[2] /= d; 
-    return *this; 
-}
-
-vec3& mat3::operator [] ( int i) 
+mat3& mat3::operator = (const mat3& m)
 {
-    assert(! (i < VX || i > VZ));
+    mM[0] = m.mM[0]; mM[1] = m.mM[1]; mM[2] = m.mM[2];
+    return *this;
+}
+
+mat3& mat3::operator += (const mat3& m)
+{
+    mM[0] += m.mM[0]; mM[1] += m.mM[1]; mM[2] += m.mM[2];
+    return *this;
+}
+
+mat3& mat3::operator -= (const mat3& m)
+{
+    mM[0] -= m.mM[0]; mM[1] -= m.mM[1]; mM[2] -= m.mM[2];
+    return *this;
+}
+
+mat3& mat3::operator *= (double d)
+{
+    mM[0] *= d; mM[1] *= d; mM[2] *= d;
+    return *this;
+}
+
+mat3& mat3::operator /= (double d)
+{
+    mM[0] /= d; mM[1] /= d; mM[2] /= d;
+    return *this;
+}
+
+vec3& mat3::operator [] (int i)
+{
+    assert(!(i < VX || i > VZ));
     return mM[i];
 }
 
-const vec3& mat3::operator [] ( int i) const 
+const vec3& mat3::operator [] (int i) const
 {
     assert(!(i < VX || i > VZ));
     return mM[i];
@@ -555,7 +579,7 @@ const vec3& mat3::operator [] ( int i) const
 
 // SPECIAL FUNCTIONS
 
-mat3 mat3::Transpose() const 
+mat3 mat3::Transpose() const
 {
     return mat3(vec3(mM[0][0], mM[1][0], mM[2][0]),
         vec3(mM[0][1], mM[1][1], mM[2][1]),
@@ -616,16 +640,19 @@ vec3 mat3::GetYawPitchRoll(unsigned int leftAxis, unsigned int upAxis, unsigned 
     {
         frontVect2 = frontVect;
         dVect = -upVect - frontVect2;
-    }else if (frontVect[VY] < 0.0f && upVect[VY] < 0.0f)
+    }
+    else if (frontVect[VY] < 0.0f && upVect[VY] < 0.0f)
     {
         frontVect2 = -frontVect;
         dVect = upVect - frontVect2;
-    }else if (frontVect[VY] >= 0.0f && upVect[VY] < 0.0f)
+    }
+    else if (frontVect[VY] >= 0.0f && upVect[VY] < 0.0f)
     {
         frontVect2 = -frontVect;
         dVect = -upVect - frontVect2;
 
-    }else if (frontVect[VY] < 0.0f && upVect[VY] >= 0.0f)
+    }
+    else if (frontVect[VY] < 0.0f && upVect[VY] >= 0.0f)
     {
         frontVect2 = frontVect;
         dVect = upVect - frontVect2;
@@ -644,7 +671,8 @@ vec3 mat3::GetYawPitchRoll(unsigned int leftAxis, unsigned int upAxis, unsigned 
     if (frontVect[VY] >= 0.0f)
     {
         value = -v;
-    }else
+    }
+    else
     {
         value = v;
     }
@@ -655,7 +683,8 @@ vec3 mat3::GetYawPitchRoll(unsigned int leftAxis, unsigned int upAxis, unsigned 
     if (leftVect[VY] >= 0.0f)
     {
         value = -v;
-    }else
+    }
+    else
     {
         value = v;
     }
@@ -693,58 +722,58 @@ vec3 mat3::GetYawPitchRoll(unsigned int leftAxis, unsigned int upAxis, unsigned 
 // FRIENDS
 
 mat3 operator - (const mat3& a)
-{ 
-    return mat3(-a.mM[0], -a.mM[1], -a.mM[2]); 
+{
+    return mat3(-a.mM[0], -a.mM[1], -a.mM[2]);
 }
 
 mat3 operator + (const mat3& a, const mat3& b)
-{ 
-    return mat3(a.mM[0] + b.mM[0], a.mM[1] + b.mM[1], a.mM[2] + b.mM[2]); 
+{
+    return mat3(a.mM[0] + b.mM[0], a.mM[1] + b.mM[1], a.mM[2] + b.mM[2]);
 }
 
 mat3 operator - (const mat3& a, const mat3& b)
-{ 
-    return mat3(a.mM[0] - b.mM[0], a.mM[1] - b.mM[1], a.mM[2] - b.mM[2]); 
+{
+    return mat3(a.mM[0] - b.mM[0], a.mM[1] - b.mM[1], a.mM[2] - b.mM[2]);
 }
 
 mat3 operator * (const mat3& a, const mat3& b)
 {
 #define ROWCOL(i, j) \
     a.mM[i].n[0]*b.mM[0][j] + a.mM[i].n[1]*b.mM[1][j] + a.mM[i].n[2]*b.mM[2][j]
-    return mat3(vec3(ROWCOL(0,0), ROWCOL(0,1), ROWCOL(0,2)),
-        vec3(ROWCOL(1,0), ROWCOL(1,1), ROWCOL(1,2)),
-        vec3(ROWCOL(2,0), ROWCOL(2,1), ROWCOL(2,2)));
+    return mat3(vec3(ROWCOL(0, 0), ROWCOL(0, 1), ROWCOL(0, 2)),
+        vec3(ROWCOL(1, 0), ROWCOL(1, 1), ROWCOL(1, 2)),
+        vec3(ROWCOL(2, 0), ROWCOL(2, 1), ROWCOL(2, 2)));
 #undef ROWCOL // (i, j)
 }
 
 mat3 operator * (const mat3& a, double d)
-{ 
-    return mat3(a.mM[0] * d, a.mM[1] * d, a.mM[2] * d); 
+{
+    return mat3(a.mM[0] * d, a.mM[1] * d, a.mM[2] * d);
 }
 
 mat3 operator * (double d, const mat3& a)
-{ 
-    return a*d; 
+{
+    return a * d;
 }
 
 mat3 operator / (const mat3& a, double d)
-{ 
-    return mat3(a.mM[0] / d, a.mM[1] / d, a.mM[2] / d); 
+{
+    return mat3(a.mM[0] / d, a.mM[1] / d, a.mM[2] / d);
 }
 
 int operator == (const mat3& a, const mat3& b)
-{ 
-    return (a.mM[0] == b.mM[0]) && (a.mM[1] == b.mM[1]) && (a.mM[2] == b.mM[2]); 
+{
+    return (a.mM[0] == b.mM[0]) && (a.mM[1] == b.mM[1]) && (a.mM[2] == b.mM[2]);
 }
 
 int operator != (const mat3& a, const mat3& b)
-{ 
-    return !(a == b); 
+{
+    return !(a == b);
 }
 
 void Swap(mat3& a, mat3& b)
-{ 
-    mat3 tmp(a); a = b; b = tmp; 
+{
+    mat3 tmp(a); a = b; b = tmp;
 }
 
 std::istream& operator >> (std::istream& s, mat3& m)
@@ -765,15 +794,15 @@ std::ostream& operator << (std::ostream& s, const mat3& m)
     {
         for (unsigned int j = 0; j < 2; j++)
         {
-            s << (float) m[i][j] << " ";
+            s << (float)m[i][j] << " ";
         }
-        s << (float) m[i][2] << std::endl;
+        s << (float)m[i][2] << std::endl;
     }
     return s;
 }
 
 
- vec3 operator * (const mat3& a, const vec3& v)
+vec3 operator * (const mat3& a, const vec3& v)
 {
 #define ROWCOL(i) a.mM[i].n[0]*v.n[VX] + a.mM[i].n[1]*v.n[VY] \
     + a.mM[i].n[2]*v.n[VZ]
@@ -807,7 +836,7 @@ double quat::Distance(const quat& q1, const quat& q2) // returns angle between i
         inner_product = quat::Dot(q1, -q2);
     }
 
-    double tmp = std::min<double>(1.0, std::max<double>(-1.0,2*inner_product*inner_product - 1));
+    double tmp = std::min<double>(1.0, std::max<double>(-1.0, 2 * inner_product * inner_product - 1));
     double theta = acos(tmp);
     return theta;
 }
@@ -917,7 +946,7 @@ double quat::Z() const
 
 quat operator - (const quat& q)
 {
-    return quat(-q.mQ[VW], -q.mQ[VX], -q.mQ[VY], -q.mQ[VZ]); 
+    return quat(-q.mQ[VW], -q.mQ[VX], -q.mQ[VY], -q.mQ[VZ]);
 }
 
 quat operator + (const quat& q0, const quat& q1)
@@ -960,7 +989,7 @@ bool operator == (const quat& q0, const quat& q1)
 
 bool operator != (const quat& q0, const quat& q1)
 {
-    return !(q0 == q1); 
+    return !(q0 == q1);
 }
 
 // special functions
@@ -975,7 +1004,7 @@ double quat::Length() const
     double l = SqrLength();
     if (l > EPSILON)
         return sqrt(SqrLength());
-    else 
+    else
         return 0;
 }
 
@@ -985,12 +1014,13 @@ quat& quat::Normalize()
     if (l < EPSILON || abs(l) > 1e6)
     {
         FromAxisAngle(vec3(0.0f, 1.0f, 0.0f), 0.0f);
-    }else
+    }
+    else
     {
         *this /= l;
     }
 
-    return *this; 
+    return *this;
 }
 
 
@@ -1015,7 +1045,7 @@ quat quat::Exp(const quat& q)
 
     // When A is near zero, sin(A)/A is approximately 1.  Use
     // exp(q) = cos(A)+A*(x*i+y*j+z*k)
-    double coeff = ( abs(sn) < EPSILON ? 1.0f : sn/angle );
+    double coeff = (abs(sn) < EPSILON ? 1.0f : sn / angle);
 
     quat result(cs, coeff * q.mQ[VX], coeff * q.mQ[VY], coeff * q.mQ[VZ]);
 
@@ -1026,13 +1056,13 @@ quat quat::Log(const quat& q)
 {
     // q = cos(A)+sin(A)*(x*i+y*j+z*k) where (x,y,z) is unit length
     // log(q) = A*(x*i+y*j+z*k)
-    
+
     double angle = acos(q.mQ[VW]);
     double sn = sin(angle);
 
     // When A is near zero, A/sin(A) is approximately 1.  Use
     // log(q) = sin(A)*(x*i+y*j+z*k)
-    double coeff = ( abs(sn) < EPSILON ? 1.0f : angle/sn );
+    double coeff = (abs(sn) < EPSILON ? 1.0f : angle / sn);
 
     return quat(0.0f, coeff * q.mQ[VX], coeff * q.mQ[VY], coeff * q.mQ[VZ]);
 }
@@ -1047,58 +1077,75 @@ void quat::Zero()
 
 void quat::FromRotation(const mat3& rot)
 {
-	mQ[VW] = 0.0; mQ[VX] = 1.0; mQ[VY] = 0.0;  mQ[VZ] = 0.0;
-	//TODO: student implementation for converting from rotation matrix to quat goes here
-	
-	Normalize();
+    //TODO: student implementation for converting from rotation matrix to quat goes here
+    // This implementation does not contemplate 180 degrees.
+    if (1 + rot[0][0] + rot[1][1] + rot[2][2] > 0)
+    {
+        mQ[VW] = std::sqrt(1 + rot[0][0] + rot[1][1] + rot[2][2]) / 2.;
+        mQ[VX] = (rot[2][1] - rot[1][2]) / (4 * mQ[VW]);
+        mQ[VY] = (rot[0][2] - rot[2][0]) / (4 * mQ[VW]);
+        mQ[VZ] = (rot[1][0] - rot[0][1]) / (4 * mQ[VW]);
+    }
+    Normalize();
 }
 
 quat quat::Slerp(const quat& q0, const quat& q1, double u)
 {
-	quat q = q0;
-	//TODO: student implemetation of Slerp goes here
-
-	return q.Normalize();
+    //TODO: student implemetation of Slerp goes here
+    quat q;
+    double omega = Distance(q0, q1);
+    if (1 - cos(omega) < EPSILON || cos(omega) < EPSILON)
+    {
+        q = q0 * (1 - u) + q1 * u;
+    }
+    else
+    {
+        q = (sin((1 - u) * omega) / sin(omega)) * q0 + (sin(omega * u) / sin(omega)) * q1;
+    }
+    return q.Normalize();
 }
+
 quat quat::SDouble(const quat& a, const quat& b)
 {
-	quat q = a;
-	//TODO: student implementation ofSDouble goes here
-
-	return q.Normalize();
+    //TODO: student implementation ofSDouble goes here
+    quat q = 2 * quat::Dot(a, b) * b - a;
+    return q.Normalize();
 }
 
 quat quat::SBisect(const quat& a, const quat& b)
 {
-	quat q = a;
-	//TODO: student implementation of SBisect goes here
-
-	return q.Normalize();
+    //TODO: student implementation of SBisect goes here
+    quat q = (a + b) / (a + b).Length();
+    return q.Normalize();
 }
 
 
 quat quat::Scubic(const quat& b0, const quat& b1, const quat& b2, const quat& b3, double u)
 {
-	quat result = b0;
-	quat b01, b11, b21, b02, b12, b03;
-	// TODO: Return the result of Scubic based on the cubic quaternion curve control points b0, b1, b2 and b3
-
-	return result.Normalize(); // result should be of unit length
+    quat b01, b11, b21, b02, b12, b03;
+    // TODO: Return the result of Scubic based on the cubic quaternion curve control points b0, b1, b2 and b3
+    b01 = Slerp(b0, b1, u);
+    b11 = Slerp(b1, b2, u);
+    b21 = Slerp(b2, b3, u);
+    b02 = Slerp(b01, b11, u);
+    b12 = Slerp(b11, b21, u);
+    b03 = Slerp(b02, b12, u);
+    return b03.Normalize(); // result should be of unit length
 }
 
 
 quat quat::Intermediate(const quat& q0, const quat& _q1, const quat& _q2)
 {
-	// assert:  q0, q1, q2 are unit quaternion
-	quat q1 = _q1;
-	quat q2 = _q2;
+    // assert:  q0, q1, q2 are unit quaternion
+    quat q1 = _q1;
+    quat q2 = _q2;
 
-	if (quat::Dot(q0, q1) < 0) q1 = -q1;
-	if (quat::Dot(q0, q2) < 0) q2 = -q2;
+    if (quat::Dot(q0, q1) < 0) q1 = -q1;
+    if (quat::Dot(q0, q2) < 0) q2 = -q2;
 
-	quat inv = UnitInverse(q1);
-	quat exp = Exp(-0.25f * (Log(inv * q0) + Log(inv * q2)));
-	return q1 * exp;
+    quat inv = UnitInverse(q1);
+    quat exp = Exp(-0.25f * (Log(inv * q0) + Log(inv * q2)));
+    return q1 * exp;
 }
 
 quat quat::Squad(const quat& q0, const quat& a, const quat& b, const quat& q1, double t)
@@ -1111,10 +1158,10 @@ vec3 quat::ToExpMap() const
     vec3 axis; double angle;
     ToAxisAngle(axis, angle);
 
-    vec3 expmap(0,0,0);
+    vec3 expmap(0, 0, 0);
     if (fabs(angle) > 0.000001)
     {
-        double factor = angle / sin(0.5*angle);
+        double factor = angle / sin(0.5 * angle);
         expmap = vec3(factor * X(), factor * Y(), factor * Z());
     }
     return expmap;
@@ -1126,16 +1173,16 @@ void quat::FromExpMap(const vec3& expmap)
     double scale = 0.0;
     if (fabs(theta) < 0.032)
     {
-        scale = 0.5 + (theta*theta)*0.021;
+        scale = 0.5 + (theta * theta) * 0.021;
     }
     else
     {
-        scale = sin(0.5*theta)/theta;
+        scale = sin(0.5 * theta) / theta;
     }
-    mQ[VW] = cos(0.5*theta);
-    mQ[VX] = expmap[0]*scale;
-    mQ[VY] = expmap[1]*scale;
-    mQ[VZ] = expmap[2]*scale;
+    mQ[VW] = cos(0.5 * theta);
+    mQ[VX] = expmap[0] * scale;
+    mQ[VY] = expmap[1] * scale;
+    mQ[VZ] = expmap[2] * scale;
     Normalize(); // not sure this is necessary....
 }
 
@@ -1152,38 +1199,52 @@ quat quat::ProjectToAxis(const quat& q, vec3& axis)
     if (angle < EPSILON)
     {
         halfTheta = 0.0f;
-    }else
+    }
+    else
     {
         double s = axis * qv;
         double c = q.W();
         halfTheta = atan2(s, c);
-    }    
+    }
     double cn = cos(halfTheta);
     sn = sin(halfTheta);
-    return quat(cn, sn * axis[VX], sn * axis[VY], sn * axis[VZ]); 
+    return quat(cn, sn * axis[VX], sn * axis[VY], sn * axis[VZ]);
 }
 
 // Conversion functions
-void quat::ToAxisAngle (vec3& axis, double& angleRad) const
+void quat::ToAxisAngle(vec3& axis, double& angleRad) const
 {
-	axis = vec3(1.0, 0.0, 0.0);
-	angleRad = 0.0;
-	//TODO: student implementation for converting quaternion to axis/angle representation goes here
+    //TODO: student implementation for converting quaternion to axis/angle representation goes here
+    angleRad = acos(mQ[VW]) * 2;
+    if (angleRad < EPSILON && angleRad > EPSILON)
+    {
+        angleRad = -EPSILON;
+    }
+    axis = vec3(mQ[VX] * sin(angleRad / 2), mQ[VY] * sin(angleRad / 2), mQ[VZ] * sin(angleRad / 2));
 }
 
-void quat::FromAxisAngle (const vec3& axis, double angleRad)
+void quat::FromAxisAngle(const vec3& axis, double angleRad)
 {
-	//TODO: student implementation for converting from axis/angle to quaternion goes here
-	mQ[VW] = 0.0; mQ[VX] = 1.0; mQ[VY] = 0.0;  mQ[VZ] = 0.0;
+    //TODO: student implementation for converting from axis/angle to quaternion goes here
+    mQ[VW] = cos(angleRad / 2);
+    mQ[VX] = sin(angleRad / 2) * axis[0];
+    mQ[VY] = sin(angleRad / 2) * axis[1];
+    mQ[VZ] = sin(angleRad / 2) * axis[2];
 }
 
-mat3 quat::ToRotation () const
+mat3 quat::ToRotation() const
 {
-	mat3 m;
-	m.Identity();
-	//TODO: student implementation for converting quaternion to rotation matrix goes here
-
-	return m;
+    mat3 m;
+    m[0][0] = 1 - 2 * mQ[VY] * mQ[VY] - 2 * mQ[VZ] * mQ[VZ];
+    m[0][1] = 2 * mQ[VX] * mQ[VY] - mQ[VW] * mQ[VZ];
+    m[0][2] = 2 * mQ[VX] * mQ[VZ] + 2 * mQ[VW] * mQ[VY];
+    m[1][0] = 2 * mQ[VX] * mQ[VY] + 2 * mQ[VW] * mQ[VZ];
+    m[1][1] = 1 - 2 * mQ[VX] * mQ[VX] - 2 * mQ[VZ] * mQ[VZ];
+    m[1][2] = 2 * mQ[VY] * mQ[VZ] - 2 * mQ[VW] * mQ[VX];
+    m[2][0] = 2 * mQ[VX] * mQ[VZ] - 2 * mQ[VW] * mQ[VY];
+    m[2][1] = 2 * mQ[VY] * mQ[VZ] + 2 * mQ[VW] * mQ[VX];
+    m[2][2] = 1 - 2 * mQ[VX] * mQ[VX] - 2 * mQ[VY] * mQ[VY];
+    return m;
 }
 
 std::istream& operator >> (std::istream& s, quat& q)
@@ -1199,11 +1260,11 @@ std::istream& operator >> (std::istream& s, quat& q)
 
 std::ostream& operator << (std::ostream& s, const quat& q)
 {
-    s << (float) q[VW] << " " << (float) q[VX] << " " << (float) q[VY] << " " << (float) q[VZ];
+    s << (float)q[VW] << " " << (float)q[VX] << " " << (float)q[VY] << " " << (float)q[VZ];
     return s;
 }
 
 double Lerp(double q0, double q1, double t)
 {
-    return q0*(1 - t) + q1*(t);
+    return q0 * (1 - t) + q1 * (t);
 }

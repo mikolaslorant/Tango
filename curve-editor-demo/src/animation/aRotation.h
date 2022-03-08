@@ -22,7 +22,7 @@ protected:
     vec3 mM[3];
 
 public:
-	enum RotOrder { ZYX, XYZ, YZX, XZY, YXZ, ZXY };
+    enum RotOrder { ZYX, XYZ, YZX, XZY, YXZ, ZXY };
 
     // Constructors
     mat3();
@@ -31,17 +31,17 @@ public:
     mat3(const mat3& m);
 
     // Static functions
-	void Zero(); 
-	void Identity();
+    void Zero();
+    void Identity();
 
-	static mat3 Rotation3D(const vec3& axis, double angleRad);
-	static mat3 Rotation3D(const int Axis, double angleRad);
+    static mat3 Rotation3D(const vec3& axis, double angleRad);
+    static mat3 Rotation3D(const int Axis, double angleRad);
 
     static mat3 FromToRotation(const vec3& fromDir, const vec3& toDir);
-	bool ToEulerAngles(RotOrder order, vec3& anglesRad) const;
-	mat3 FromEulerAngles(RotOrder order, const vec3& anglesRad);
+    bool ToEulerAngles(RotOrder order, vec3& anglesRad) const;
+    mat3 FromEulerAngles(RotOrder order, const vec3& anglesRad);
 
-	static mat3 FromLocalAxis(const vec3& right, const vec3& up, const vec3& forward);
+    static mat3 FromLocalAxis(const vec3& right, const vec3& up, const vec3& forward);
 
     // Conversion with Quaternion
     quat ToQuaternion() const;
@@ -50,13 +50,13 @@ public:
     void FromAxisAngle(const vec3& axis, double angleRad);
 
     // Assignment operators
-    mat3& operator = ( const mat3& m );	    // assignment of a mat3
-    mat3& operator += ( const mat3& m );	    // incrementation by a mat3
-    mat3& operator -= ( const mat3& m );	    // decrementation by a mat3
-    mat3& operator *= ( double d );	    // multiplication by a constant
-    mat3& operator /= ( double d );	    // division by a constant
-    vec3& operator [] ( int i);					// indexing
-    const vec3& operator [] ( int i) const;		// read-only indexing
+    mat3& operator = (const mat3& m);	    // assignment of a mat3
+    mat3& operator += (const mat3& m);	    // incrementation by a mat3
+    mat3& operator -= (const mat3& m);	    // decrementation by a mat3
+    mat3& operator *= (double d);	    // multiplication by a constant
+    mat3& operator /= (double d);	    // division by a constant
+    vec3& operator [] (int i);					// indexing
+    const vec3& operator [] (int i) const;		// read-only indexing
 
     // special functions
     mat3 Transpose() const;								// transpose
@@ -71,19 +71,19 @@ public:
     vec3 GetYawPitchRoll(unsigned int leftAxis, unsigned int upAixs, unsigned int frontAxis) const;
 
     // friends
-     friend mat3 operator - (const mat3& a);						// -m1
-     friend mat3 operator + (const mat3& a, const mat3& b);	    // m1 + m2
-     friend mat3 operator - (const mat3& a, const mat3& b);	    // m1 - m2
-     friend mat3 operator * (const mat3& a, const mat3& b);		// m1 * m2
-     friend mat3 operator * (const mat3& a, double d);	    // m1 * 3.0
-     friend mat3 operator * (double d, const mat3& a);	    // 3.0 * m1
-     friend mat3 operator / (const mat3& a, double d);	    // m1 / 3.0
-     friend int operator == (const mat3& a, const mat3& b);	    // m1 == m2 ?
-     friend int operator != (const mat3& a, const mat3& b);	    // m1 != m2 ?
-     friend void Swap(mat3& a, mat3& b);			    // swap m1 & m2
+    friend mat3 operator - (const mat3& a);						// -m1
+    friend mat3 operator + (const mat3& a, const mat3& b);	    // m1 + m2
+    friend mat3 operator - (const mat3& a, const mat3& b);	    // m1 - m2
+    friend mat3 operator * (const mat3& a, const mat3& b);		// m1 * m2
+    friend mat3 operator * (const mat3& a, double d);	    // m1 * 3.0
+    friend mat3 operator * (double d, const mat3& a);	    // 3.0 * m1
+    friend mat3 operator / (const mat3& a, double d);	    // m1 / 3.0
+    friend int operator == (const mat3& a, const mat3& b);	    // m1 == m2 ?
+    friend int operator != (const mat3& a, const mat3& b);	    // m1 != m2 ?
+    friend void Swap(mat3& a, mat3& b);			    // swap m1 & m2
 
-     friend std::istream& operator >> (std::istream& s, mat3& v);
-     friend std::ostream& operator << (std::ostream& s, const mat3& v);
+    friend std::istream& operator >> (std::istream& s, mat3& v);
+    friend std::ostream& operator << (std::ostream& s, const mat3& v);
 
     // necessary friend declarations
     friend vec3 operator * (const mat3& a, const vec3& v);	    // linear transform
@@ -113,27 +113,27 @@ public:
     static quat Log(const quat& q);
     static quat UnitInverse(const quat& q);
 
-   // interpolation functions
-	static quat SDouble(const quat& a, const quat& b);
-	static quat SBisect(const quat& a, const quat& b);
-	static quat Slerp(const quat& q0, const quat& q1, double u);
-	static void ScubicControlPts(const quat& q_1, const quat& q0, const quat& q1, const quat& q2, quat& b1, quat& b2);
-	static quat Scubic(const quat& q0, const quat& b1, const quat& b2, const quat& q1, double u);
-	static quat Intermediate(const quat& q0, const quat& q1, const quat& q2);
-	static quat Squad(const quat& q0, const quat& a, const quat& b, const quat& q1, double u);
-   
+    // interpolation functions
+    static quat SDouble(const quat& a, const quat& b);
+    static quat SBisect(const quat& a, const quat& b);
+    static quat Slerp(const quat& q0, const quat& q1, double u);
+    static void ScubicControlPts(const quat& q_1, const quat& q0, const quat& q1, const quat& q2, quat& b1, quat& b2);
+    static quat Scubic(const quat& q0, const quat& b1, const quat& b2, const quat& q1, double u);
+    static quat Intermediate(const quat& q0, const quat& q1, const quat& q2);
+    static quat Squad(const quat& q0, const quat& a, const quat& b, const quat& q1, double u);
+
 
 
     // Conversion functions
-    void ToAxisAngle (vec3& axis, double& angleRad) const;
-    void FromAxisAngle (const vec3& axis, double angleRad);
-	static quat ProjectToAxis(const quat& q, vec3& axis);
+    void ToAxisAngle(vec3& axis, double& angleRad) const;
+    void FromAxisAngle(const vec3& axis, double angleRad);
+    static quat ProjectToAxis(const quat& q, vec3& axis);
 
     vec3 ToExpMap() const;
     void FromExpMap(const vec3& expmap);
 
-    mat3 ToRotation () const;
-    void FromRotation (const mat3& rot);
+    mat3 ToRotation() const;
+    void FromRotation(const mat3& rot);
 
     // Assignment operators
     quat& operator = (const quat& q);	// assignment of a quaternion
@@ -157,18 +157,18 @@ public:
     double operator[](int i) const;
 
     // Friends
-     friend quat operator - (const quat& q);							// -q
-     friend quat operator + (const quat& q0, const quat& q1);	    // q0 + q1
-     friend quat operator - (const quat& q0, const quat& q1);	// q0 - q1
-     friend quat operator * (const quat& q, double d);			// q * 3.0
-     friend quat operator * (double d, const quat& q);			// 3.0 * v
-     friend quat operator * (const quat& q0, const quat& q1);  // q0 * q1
-     friend quat operator / (const quat& q, double d);			// q / 3.0
-     friend bool operator == (const quat& q0, const quat& q1);		// q0 == q1 ?
-     friend bool operator != (const quat& q0, const quat& q1);		// q0 != q1 ?
+    friend quat operator - (const quat& q);							// -q
+    friend quat operator + (const quat& q0, const quat& q1);	    // q0 + q1
+    friend quat operator - (const quat& q0, const quat& q1);	// q0 - q1
+    friend quat operator * (const quat& q, double d);			// q * 3.0
+    friend quat operator * (double d, const quat& q);			// 3.0 * v
+    friend quat operator * (const quat& q0, const quat& q1);  // q0 * q1
+    friend quat operator / (const quat& q, double d);			// q / 3.0
+    friend bool operator == (const quat& q0, const quat& q1);		// q0 == q1 ?
+    friend bool operator != (const quat& q0, const quat& q1);		// q0 != q1 ?
 
-     friend std::istream& operator >> (std::istream& s, quat& v);
-     friend std::ostream& operator << (std::ostream& s, const quat& v);
+    friend std::istream& operator >> (std::istream& s, quat& v);
+    friend std::ostream& operator << (std::ostream& s, const quat& v);
 
     // Special functions
     double Length() const;
@@ -183,4 +183,3 @@ public:
 
 
 #endif
-

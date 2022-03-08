@@ -5,7 +5,7 @@
 #include <map>
 #include <vector>
 
-class ASplineQuat 
+class ASplineQuat
 {
 public:
     enum InterpolationType { LINEAR, CUBIC };
@@ -27,7 +27,7 @@ public:
     void editKey(int keyID, const quat& value);
     void appendKey(double time, const quat& value, bool updateCurve = true);
     void appendKey(const quat& value, bool updateCurve = true);
-	int insertKey(double time, const quat& value, bool updateCurve = true);
+    int insertKey(double time, const quat& value, bool updateCurve = true);
     void deleteKey(int keyID);
     quat getKey(int keyID);
     int getNumKeys() const;
@@ -35,11 +35,11 @@ public:
     void cacheCurve();
 
     int getNumCurveSegments() const;
-	int getCurveSegment(double t);
-	quat getCachedValue(double t) const;
-	quat getCubicValue(double t);
-	quat getLinearValue(double t);
-	void computeControlPoints(quat& startQuat, quat& endQuat);
+    int getCurveSegment(double t);
+    quat getCachedValue(double t) const;
+    quat getCubicValue(double t);
+    quat getLinearValue(double t);
+    void computeControlPoints(quat& startQuat, quat& endQuat);
 
     void clear();
     double getDuration() const;
@@ -56,7 +56,7 @@ protected:
     bool mLooping;
     std::vector<Key> mKeys;
     std::vector<quat> mCachedCurve;
-	std::vector<quat> mCtrlPoints;
+    std::vector<quat> mCtrlPoints;
     InterpolationType mType;
 };
 
