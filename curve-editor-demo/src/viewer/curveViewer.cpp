@@ -1,7 +1,6 @@
 #include "curveViewer.h"
 #include <gtc/matrix_transform.hpp>
 
-
 CurveViewer::CurveViewer(const std::string& name) :
 	Viewer(name),
 	mShowControlPoint(false), mAnimate(false),
