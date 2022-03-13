@@ -66,6 +66,8 @@ add_executable(CurveViewer
     ./src/viewer/viewer.h
     ./src/viewer/utils.cpp
     ./src/viewer/utils.h
+    ./src/viewer/solver.cpp
+    ./src/viewer/solver.h
 )
 
 target_include_directories(CurveViewer PUBLIC 
