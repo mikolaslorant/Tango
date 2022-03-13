@@ -4,8 +4,23 @@ int Solver::getNumVar() {
 	return numVar;
 }
 
-void Solver::setNumVar(int numVar) {
-	this->numVar = numVar;
+void Solver::setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangents) {
+	this->numVar = deltaTangents.size();
+	this->numQNZ = 0;
+
+	//qsubi[0] = 0; qsubj[0] = 0; qval[0] = 2.0;
+	//qsubi[1] = 1; qsubj[1] = 1; qval[1] = 0.2;
+	//qsubi[2] = 2; qsubj[2] = 0; qval[2] = -1.0;
+	//qsubi[3] = 2; qsubj[3] = 2; qval[3] = 2.0;
+
+	for (int itr_i = 0; itr_i < numVar; itr_i++) {
+		for (int itr_j = 0; itr_j < itr_i; itr_j++) {
+			if (Q(itr_i, itr_j) != 0.f) {
+				qsubi[numQNZ] = itr_i;	qsubj[numQNZ] = itr_j;	qval[numQNZ] = Q(itr_i, itr_j);
+				this->numQNZ++;
+			}
+		}
+	}
 }
 
 //void setDeltaTangents(std::vector<int> &deltaTangentsIp) {
@@ -22,11 +37,9 @@ Solver::Solver() {
 	xx = new double[numVar];
 
 	// Q
-	qsubi = new MSKint32t[NUMQNZ];
-	qsubj = new MSKint32t[NUMQNZ];
-	qval = new double[NUMQNZ];
-
-	Q = Eigen::MatrixXd(numVar, numVar);
+	qsubi = new MSKint32t[numQNZ];
+	qsubj = new MSKint32t[numQNZ];
+	qval = new double[numQNZ];
 
 	i = 0;
 	j = 0;
@@ -89,27 +102,15 @@ MSKrescodee Solver::runSolver() {
 				/*
 				* The lower triangular part of the Q
 				* matrix in the objective is specified.
-				*/
-				int varCnt = 0;
-				int nzvarCnt = 0.f;
-				for (int itr_r = 0; itr_r < numVar; itr_r++) {
-					for (int itr_c = 0; itr_c < itr_r; itr_c++) {
-						
+				* Currently implemented in setSolverVariables() by external call
+				* qsubi[0] = 0; qsubj[0] = 0; qval[0] = 2.0;
+				* qsubi[1] = 1; qsubj[1] = 1; qval[1] = 0.2;
+				* qsubi[2] = 2; qsubj[2] = 0; qval[2] = -1.0;
+				* qsubi[3] = 2; qsubj[3] = 2; qval[3] = 2.0;
+				* /
 
-						//qsubi[varCnt] = itr_r; qsubj[varCnt] = itr_c; qval[varCnt] = itrVal;
-						nzvarCnt++;
-					}
-				}
-
-				qsubi[0] = 0; qsubj[0] = 0; qval[0] = 2.0;
-				//qsubi[1] = 0; qsubj[0] = 0; qval[0] = 0.0;
-				qsubi[1] = 1; qsubj[1] = 1; qval[1] = 0.2;
-				//qsubi[2] = 0; qsubj[0] = 0; qval[0] = 0.0;
-				//qsubi[2] = 0; qsubj[1] = 0; qval[0] = 0.0;
-				qsubi[2] = 2; qsubj[2] = 0; qval[2] = -1.0;
-				qsubi[3] = 2; qsubj[3] = 2; qval[3] = 2.0;
 				/* Input the Q for the objective. */
-				r = MSK_putqobj(task, NUMQNZ, qsubi, qsubj, qval);
+				r = MSK_putqobj(task, numQNZ, qsubi, qsubj, qval);
 			}
 			if (r == MSK_RES_OK)
 			{

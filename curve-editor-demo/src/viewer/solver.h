@@ -19,7 +19,7 @@
 # define NUMCON 1 /* Number of constraints. */
 //# define NUMVAR 3 /* Number of variables. */
 # define NUMANZ 3 /* Number of non-zeros in A. */
-# define NUMQNZ 4 /* Number of non-zeros in Q. */
+//# define NUMQNZ 4 /* Number of non-zeros in Q. */
 
 static void MSKAPI printstr(void* handle,
 	const char str[])
@@ -34,7 +34,7 @@ class Solver
 	//void setDeltaTangents(std::vector<int> deltaTangents);
 
 	int numVar;
-	Eigen::MatrixXd Q;
+	int numQNZ;
 
 	MSKint32t i, j;
 	MSKenv_t env = NULL;
@@ -55,6 +55,6 @@ class Solver
 public:
 	Solver();
 	int getNumVar();
-	void setNumVar(int numVar);
+	void setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangents);
 	MSKrescodee runSolver();
 };
