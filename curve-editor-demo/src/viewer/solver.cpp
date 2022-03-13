@@ -4,14 +4,14 @@ int Solver::getNumVar() {
 	return numVar;
 }
 
-void Solver::setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangents) {
-	this->numVar = deltaTangents.size();
+void Solver::setSolverVariables(Eigen::MatrixXd Q, std::vector<int> theta, int tk1, int tk2) {
+	this->numVar = theta.size();
 	this->numQNZ = 0;
 
-	//qsubi[0] = 0; qsubj[0] = 0; qval[0] = 2.0;
-	//qsubi[1] = 1; qsubj[1] = 1; qval[1] = 0.2;
-	//qsubi[2] = 2; qsubj[2] = 0; qval[2] = -1.0;
-	//qsubi[3] = 2; qsubj[3] = 2; qval[3] = 2.0;
+	/*
+	* The lower triangular part of the Q
+	* matrix in the objective is specified.
+	*/
 
 	for (int itr_i = 0; itr_i < numVar; itr_i++) {
 		for (int itr_j = 0; itr_j < itr_i; itr_j++) {
@@ -21,11 +21,9 @@ void Solver::setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangent
 			}
 		}
 	}
+	this->tk1 = tk1;
+	this->tk2 = tk2;
 }
-
-//void setDeltaTangents(std::vector<int> &deltaTangentsIp) {
-//	this->deltaTangents = &deltaTangentsIp;
-//}
 
 // solver variables
 Solver::Solver() {
@@ -34,7 +32,7 @@ Solver::Solver() {
 	coeffMatB = new double[numVar];
 
 	// deltaTheta
-	xx = new double[numVar];
+	deltaTheta = new double[numVar];
 
 	// Q
 	qsubi = new MSKint32t[numQNZ];
@@ -130,10 +128,10 @@ MSKrescodee Solver::runSolver() {
 					case MSK_SOL_STA_OPTIMAL:
 						MSK_getxx(task,
 							MSK_SOL_ITR, /* Request the interior solution. */
-							xx);
+							deltaTheta);
 						printf("Optimal primal solution\n");
 						for (j = 0; j < numVar; ++j)
-							printf("x[%d]: %e\n", j, xx[j]);
+							printf("x[%d]: %e\n", j, deltaTheta[j]);
 						break;
 					case MSK_SOL_STA_DUAL_INFEAS_CER:
 					case MSK_SOL_STA_PRIM_INFEAS_CER:

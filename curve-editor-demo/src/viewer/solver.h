@@ -45,7 +45,9 @@ class Solver
 	MSKint32t* qsubi;
 	MSKint32t* qsubj;
 	double* qval;
-	double* xx;
+	double* deltaTheta;
+
+	int tk1, tk2;
 
 	MSKboundkeye bkb[1] = { MSK_BK_LO };
 	double blb[1] = { 1.0 };
@@ -55,6 +57,6 @@ class Solver
 public:
 	Solver();
 	int getNumVar();
-	void setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangents);
+	void setSolverVariables(Eigen::MatrixXd Q, std::vector<int> deltaTangents, int tk1, int tk2);
 	MSKrescodee runSolver();
 };
