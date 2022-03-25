@@ -51,6 +51,7 @@ class Contact
 
 class State
 {
+public:
 	// Cs or Csj
 	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 	CurveSegment* curveSegment;
@@ -66,6 +67,7 @@ class Pin : public State
 
 class ASolver
 {
+public:
 	// C : all curve segments affected
 	std::unordered_map<int, std::unique_ptr<CurveSegment>> curveSegments;
 	std::vector<std::unique_ptr<Pin>>  pins;

@@ -534,11 +534,11 @@ void CurveViewer::movePoint(double screenX, double screenY, ASplineVec3 & spline
 	if (mPickedPointId == -1) { return; }
 	vec3 clickPos = vec3(screenX, screenY, 0);
 	auto type = spline.getInterpolationType();
-	if (mPickedPointId == 0)
+	if (mPickedPointType == 0)
 	{
 		spline.editKey(mPickedPointId, clickPos);
 	}
-	else if (mPickedPointId == 1)
+	else if (mPickedPointType == 1)
 	{
 		if (type == ASplineVec3::CUBIC_HERMITE)
 			spline.editControlPoint(mPickedPointId, clickPos - spline.getKey(mPickedPointId - 1));
