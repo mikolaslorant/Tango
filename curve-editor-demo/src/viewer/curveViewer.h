@@ -67,7 +67,7 @@ protected:
 	int mRotOrder = mat3::XYZ;	//ZYX, XYZ, YZX, XZY, YXZ, ZXY
 
 	// Record the picked point
-	float mPickRadius = 0.02f;
+	float mPickRadius = 0.01f;
 	int mPickedPointId = -1;
 	int mPickedPointType = 0;	// 0 for key point, 1 for control point
 

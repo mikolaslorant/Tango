@@ -2,6 +2,7 @@
 #define ASplineVec3_H_
 
 #include "aVector.h"
+#include "aSolver.h"
 #include <map>
 #include <vector>
 
@@ -62,6 +63,7 @@ public:
 protected:
     bool mLooping;
     AInterpolatorVec3* mInterpolator;
+    ASolver* mSolver;
     std::vector<Key> mKeys;
     std::vector<vec3> mCtrlPoints;
     

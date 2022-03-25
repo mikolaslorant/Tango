@@ -7,13 +7,14 @@
 #pragma warning(disable:4244)
 
 
-ASplineVec3::ASplineVec3() : mInterpolator(new ABernsteinInterpolatorVec3())
+ASplineVec3::ASplineVec3() : mInterpolator(new ABernsteinInterpolatorVec3()), mSolver(new ASolver())
 {
 }
 
 ASplineVec3::~ASplineVec3()
 {
 	if (mInterpolator) delete mInterpolator;
+	if (mSolver) delete mSolver;
 }
 
 void ASplineVec3::setFramerate(double fps)

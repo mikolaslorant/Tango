@@ -455,7 +455,7 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 	vec3 clickPos = vec3(screenX, screenY, 0);
 	// check for picked states -- needs to be done before data points
 	int i = 0;
-	for (int frame = 5; i < (spline.getNumKeys() - 1) * 11; frame+=10)
+	for (int frame = 10; i < (spline.getNumKeys() - 1) * 11; frame+=10)
 	{
 		if (frame % 120 == 0)
 		{
@@ -543,11 +543,11 @@ void CurveViewer::movePoint(double screenX, double screenY, ASplineVec3 & spline
 		if (type == ASplineVec3::CUBIC_HERMITE)
 			spline.editControlPoint(mPickedPointId, clickPos - spline.getKey(mPickedPointId - 1));
 		else
-			spline.editControlPoint(mPickedPointId, clickPos));
+			spline.editControlPoint(mPickedPointId, clickPos);
 	}
 	else
 	{
-		spline.editState(mPickedPointId, clickPos);
+		spline.editStatePoint(mPickedPointId, clickPos);
 	}
 }
 
