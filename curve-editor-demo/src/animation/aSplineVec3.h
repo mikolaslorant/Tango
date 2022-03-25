@@ -31,7 +31,7 @@ public:
     InterpolationType getInterpolationType() const;
 
     vec3 getValue(double t) const;
-
+    void editStatePoint(int statePointId, const vec3& value);
     void editControlPoint(int ctrlPointID, const vec3& value);
     void appendKey(double time, const vec3& value, bool updateCurve = true);
     int insertKey(double time, const vec3& value, bool updateCurve = true);
@@ -57,13 +57,14 @@ public:
 
     vec3* getCachedCurveData();
     vec3* getControlPointsData();
+    std::vector<vec3> mCachedCurve;
 
 protected:
     bool mLooping;
     AInterpolatorVec3* mInterpolator;
     std::vector<Key> mKeys;
     std::vector<vec3> mCtrlPoints;
-    std::vector<vec3> mCachedCurve;
+    
     vec3 mStartPoint, mEndPoint; // for controlling end point behavior
 };
 

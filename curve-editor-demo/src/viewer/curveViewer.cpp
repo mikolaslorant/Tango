@@ -12,6 +12,7 @@ CurveViewer::CurveViewer(const std::string& name) :
 	mKeyPoints = std::make_unique<Drawable>();
 	mCurveLine = std::make_unique<Drawable>();
 	mControlPoints = std::make_unique<Drawable>();
+	mStatePoints = std::make_unique<Drawable>();
 	mControlPointLine = std::make_unique<Drawable>();
 	mAnimatedPoint = std::make_unique<Drawable>();
 
@@ -126,6 +127,7 @@ void CurveViewer::drawScene()
 		drawControlPoints(mSplineVec3);
 		drawKeyPoints(mSplineVec3);
 		drawAnimatedPoint(mSplineVec3);
+		drawStatePoints(mSplineVec3);
 	}
 	else
 	{
@@ -157,6 +159,44 @@ void CurveViewer::updateSplineEulerType(int newtype, ASplineVec3 & spline)
 	{
 		spline.setInterpolationType(type);
 	}
+}
+
+void CurveViewer::drawStatePoints(const ASplineVec3& spline)
+{
+	// Create vertices vector
+	if (spline.getNumKeys() < 2) { return; }
+	int numOfStates = (spline.getNumKeys() - 1) * 11;
+	std::vector<glm::vec3> points(numOfStates);
+	int i = 0;
+	for (int frame = 10; i < numOfStates; frame+=10)
+	{
+		if (frame % 120 == 0)
+		{
+			continue;
+		}
+		auto& frameData = spline.mCachedCurve[frame];
+		points[i].x = frameData[0];
+		points[i].y = frameData[1];
+		points[i].z = frameData[2];
+		i++;
+	}
+
+	glBindVertexArray(mStatePoints->VAO);
+	// Allocate space and upload the data from CPU to GPU
+	glBindBuffer(GL_ARRAY_BUFFER, mStatePoints->VBO);
+	glBufferData(GL_ARRAY_BUFFER, numOfStates * sizeof(glm::vec3), points.data(), GL_DYNAMIC_DRAW);
+
+	// Specify how the data for position can be accessed
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glEnable(GL_PROGRAM_POINT_SIZE);
+
+	mPointShader->use();
+	mPointShader->setVec3("color", glm::vec3(1, 0, 0));
+	mPointShader->setFloat("size", 15.0f);
+
+	glDrawArrays(GL_POINTS, 0, numOfStates);
+	glDisable(GL_PROGRAM_POINT_SIZE);
 }
 
 void CurveViewer::drawKeyPoints(const ASplineVec3& spline)
@@ -414,7 +454,23 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 {
 	mPickedPointId = -1;
 	vec3 clickPos = vec3(screenX, screenY, 0);
-
+	// check for picked states -- needs to be done before data points
+	int i = 0;
+	for (int frame = 5; i < (spline.getNumKeys() - 1) * 11; frame+=10)
+	{
+		if (frame % 120 == 0)
+		{
+			continue;
+		}
+		vec3 pointPos = spline.mCachedCurve[frame];
+		if ((clickPos - pointPos).Length() < mPickRadius)
+		{
+			mPickedPointType = 2;
+			mPickedPointId = i;
+			return;
+		}
+		i++;
+	}
 	// check data points -- needs to be done before ctrl points
 	for (int i = 0; i < spline.getNumKeys(); ++i)
 	{
@@ -479,9 +535,21 @@ void CurveViewer::movePoint(double screenX, double screenY, ASplineVec3 & spline
 	if (mPickedPointId == -1) { return; }
 	vec3 clickPos = vec3(screenX, screenY, 0);
 	auto type = spline.getInterpolationType();
-	mPickedPointType == 0 ? spline.editKey(mPickedPointId, clickPos) :
-		(type == ASplineVec3::CUBIC_HERMITE ? spline.editControlPoint(mPickedPointId, clickPos - spline.getKey(mPickedPointId - 1)) :
+	if (mPickedPointId == 0)
+	{
+		spline.editKey(mPickedPointId, clickPos);
+	}
+	else if (mPickedPointId == 1)
+	{
+		if (type == ASplineVec3::CUBIC_HERMITE)
+			spline.editControlPoint(mPickedPointId, clickPos - spline.getKey(mPickedPointId - 1));
+		else
 			spline.editControlPoint(mPickedPointId, clickPos));
+	}
+	else
+	{
+		spline.editState(mPickedPointId, clickPos);
+	}
 }
 
 void CurveViewer::resetSplineVec3(ASplineVec3 & spline)

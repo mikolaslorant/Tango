@@ -1,4 +1,5 @@
 #include "aVector.h"
+
 #include <algorithm>
 
 enum { VX, VY, VZ, VW };

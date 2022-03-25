@@ -22,7 +22,7 @@ protected:
 	void updateSplineVec3Type(int newtype, ASplineVec3& spline);
 	void updateSplineQuatType(int newtype, ASplineQuat& spline);
 	void updateSplineEulerType(int newtype, ASplineVec3& spline);
-
+	void drawStatePoints(const ASplineVec3& spline);
 	void drawKeyPoints(const ASplineVec3& spline);
 	void drawControlPoints(const ASplineVec3& spline);
 	void drawCurve(const ASplineVec3& spline);
@@ -58,6 +58,7 @@ protected:
 	std::unique_ptr<Drawable> mControlPoints;
 	std::unique_ptr<Drawable> mControlPointLine;
 	std::unique_ptr<Drawable> mAnimatedPoint;
+	std::unique_ptr<Drawable> mStatePoints;
 
 	std::unique_ptr<ObjModel> mRotatedModel;
 
