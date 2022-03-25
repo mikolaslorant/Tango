@@ -21,8 +21,6 @@ public:
 	int number;
 	Tangent tangentMinus;
 	Tangent tangentPlus;
-
-	Key(int number);
 };
 
 class CurveSegment
@@ -43,6 +41,7 @@ public:
 
 class Contact
 {
+public:
 	int id;
 	CurveSegment* curveSegment;
 	std::vector<CurveSegment*> orderedAffectedCurveSegments;
@@ -75,8 +74,8 @@ public:
 	std::vector<std::unique_ptr<Key>> keys;
 	// solve for new state S' passed as parameter
 	void solve(const State& newState);
-	void addPin(const State& state);
-	void addContact(const Contact& contact);
-	void getKey(int i);
+	//void addPin(const State& state);
+	//void addContact(const Contact& contact);
+	//void getKey(int i);
 };
 

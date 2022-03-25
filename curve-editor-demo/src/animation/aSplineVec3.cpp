@@ -69,7 +69,6 @@ void ASplineVec3::editStatePoint(int statePointId, const vec3& value)
 	assert(statePointId >= 0);
 	State state;
 	state.point = value;
-	state.curveSegment->id = statePointId;
 	mSolver->solve(state);
 	computeControlPoints();
 	cacheCurve();

@@ -1,6 +1,6 @@
 #include "aSolver.h"
 
-void solve(const State& newState)
+void ASolver::solve(const State& newState)
 {
 
 }
