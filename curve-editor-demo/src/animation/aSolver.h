@@ -88,10 +88,12 @@ class ASolver
 {
 public:
 	// C : all curve segments affected
+
 	std::vector<std::unique_ptr<CurveSegment>> curveSegments;
 	std::vector<std::unique_ptr<Pin>>  pins;
 	std::vector<std::unique_ptr<Contact>> contacs;
 	std::vector<std::unique_ptr<KeyFrame>> keys;
+	std::vector<std::unique_ptr<Tangent>> tangents;
 	// solve for new state S' passed as parameter
 	void solve(const State& newState);
 	//void addPin(const State& state);
