@@ -468,7 +468,7 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 		if ((clickPos - pointPos).Length() < mPickRadius)
 		{
 			mPickedPointType = 2;
-			mPickedPointId = frame;
+			mPickedPointId = i;
 			return;
 		}
 		i++;
