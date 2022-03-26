@@ -535,9 +535,10 @@ void CurveViewer::deleteKeyPoint(double screenX, double screenY, ASplineVec3 & s
 void CurveViewer::pinStatePoint(double screenX, double screenY, ASplineVec3& spline)
 {
 	pickPoint(screenX, screenY, spline);
+	vec3 clickPos = vec3(screenX, screenY, 0);
 	// if you have selected state point
 	if (mPickedPointType == 2) {
-		spline.appendPin(vec3(screenX, screenY, 0));
+		spline.appendPin(mPickedPointId, clickPos);
 	}
 }
 

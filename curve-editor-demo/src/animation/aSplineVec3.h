@@ -32,6 +32,7 @@ public:
     InterpolationType getInterpolationType() const;
 
     vec3 getValue(double t) const;
+    void setActiveState(int frameNumber, const vec3& value, CurveSegment* curveSegment, KeyFrame* leftKeyframe, KeyFrame* rightKeyframe);
     void editStatePoint(int statePointId, const vec3& value);
     void editControlPoint(int ctrlPointID, const vec3& value);
     void appendKey(double time, const vec3& value, bool updateCurve = true);
@@ -66,7 +67,7 @@ protected:
     bool mLooping;
     AInterpolatorVec3* mInterpolator;
     ASolver* mSolver;
-    State mActiveState;
+    std::unique_ptr<State> mActiveState;
     std::vector<Key> mKeys;
     std::vector<vec3> mCtrlPoints;
     

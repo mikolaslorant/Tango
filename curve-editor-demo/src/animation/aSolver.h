@@ -67,11 +67,12 @@ public:
 	// Cs or Csj
 	int frameNumber;
 	CurveSegment* curveSegment;
-	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 	vec3 point;
-	
+	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 
-	State() : frameNumber(0), curveSegment(nullptr), orderedAffectedCurveSegments(), point(vec3()) {}
+	State() : frameNumber(0), curveSegment(nullptr), point(vec3()), orderedAffectedCurveSegments() {}
+	State(int frameNumber, CurveSegment *curveSegment, vec3 point) : 
+		frameNumber(frameNumber), curveSegment(curveSegment), point(point) {}
 	~State() {}
 };
 
@@ -94,7 +95,7 @@ public:
 	std::vector<std::unique_ptr<Contact>> contacs;
 	std::vector<std::unique_ptr<KeyFrame>> keys;
 	// solve for new state S' passed as parameter
-	void solve(const State& newState);
+	void solve(const State *newState);
 	//void addPin(const State& state);
 	//void addContact(const Contact& contact);
 	//void getKey(int i);
