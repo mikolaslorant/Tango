@@ -67,76 +67,8 @@ ASplineVec3::InterpolationType ASplineVec3::getInterpolationType() const
 void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
 	assert(frameNumber >= 0);
-	// create state
-	State state;
-	state.frameNumber = frameNumber;
-	state.point = value;
-	// Check curve segment
-	std::unique_ptr<CurveSegment> curveSegment = std::make_unique<CurveSegment>();
-	// Assume translation
-	curveSegment->type = TRANSLATION;
-	// we set curve segment id to left keyframe number
-	curveSegment->id = frameNumber / 120;
-	// Create key
-	std::unique_ptr<KeyFrame> leftKeyframe = std::make_unique<KeyFrame>();
-	int i = frameNumber / 120;
-	leftKeyframe->t = mKeys[i].first;
-	leftKeyframe->frameNumber = (i) * 120;
-	// Calculate tanget minus 
-	//leftKeyframe->tangentPlus = 
-	std::unique_ptr<KeyFrame> rightKeyframe = std::make_unique<KeyFrame>();
-	rightKeyframe->t = mKeys[i + 1].first;
-	rightKeyframe->frameNumber = (i + 1) * 120;
-	// set keyframes for curve segment
-	curveSegment->keyLeft = leftKeyframe.get();
-	curveSegment->keyRight = rightKeyframe.get();
-
-	vec3 tangentVec;
-	// Left key frame tangents
-	if (i == 0)
-	{
-		tangentVec = (mKeys[i + 1].second - mKeys[i].second);
-		
-		leftKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
-	}
-	else
-	{
-		tangentVec = (mKeys[i + 1].second - mKeys[i - 1].second) * 0.5;
-
-		leftKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		leftKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
-	}
-	if (i + 1 == mKeys.size() - 1)
-	{
-		tangentVec = (mKeys[i + 1].second - mKeys[i].second);
-		rightKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
-	}
-	else
-	{
-		tangentVec = (mKeys[i + 2].second - mKeys[i].second) * 0.5;
-		rightKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
-		rightKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
-	}
-
-	// set curve segment for my state
-	state.curveSegment = curveSegment.get();
-	// call move on pointers created
-	mSolver->curveSegments.push_back(std::move(curveSegment));
-	mSolver->keys.push_back(std::move(leftKeyframe));
-	mSolver->keys.push_back(std::move(rightKeyframe));
-	mSolver->solve(state);
+	std::unique_ptr<State> mActiveState = std::make_unique<State>(frameNumber, value, mKeys, true);
+	mSolver->solve(mActiveState.get());
 	computeControlPoints();
 	cacheCurve();
 }
@@ -217,6 +149,13 @@ void ASplineVec3::appendKey(const vec3& value, bool updateCurve)
 		double lastT = mKeys[mKeys.size() - 1].first;
 		appendKey(lastT + 1, value, updateCurve);
 	}
+}
+
+void ASplineVec3::appendPin(int frameNumber, const vec3& value)
+{
+	assert(frameNumber >= 0);
+	std::unique_ptr<State> mActiveState = std::make_unique<State>(frameNumber, value, mKeys, true);
+	mSolver->pins.push_back(std::move(mActiveState));
 }
 
 void ASplineVec3::deleteKey(int keyID)

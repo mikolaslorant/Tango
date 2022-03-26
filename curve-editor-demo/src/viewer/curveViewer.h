@@ -35,6 +35,7 @@ protected:
 	void pickPoint(double screenX, double screenY, const ASplineVec3& spline);
 	void appendKeyPoint(double screenX, double screenY, ASplineVec3& spline);
 	void deleteKeyPoint(double screenX, double screenY, ASplineVec3& spline);
+	void pinStatePoint(double screenX, double screenY, ASplineVec3& spline);
 	void movePoint(double screenX, double screenY, ASplineVec3& spline);
 	void resetSplineVec3(ASplineVec3& spline);
 
@@ -52,6 +53,7 @@ protected:
 	ASplineQuat mSplineQuat;
 
 	int mDemo = 0;	// 0 for spline, 1 for rotation
+	int mPinCurve = 0;
 
 	std::unique_ptr<Drawable> mKeyPoints;
 	std::unique_ptr<Drawable> mCurveLine;

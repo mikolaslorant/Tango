@@ -62,6 +62,9 @@ void CurveViewer::createGUIWindow()
 			resetSplineVec3(mSplineVec3);
 		}
 		ImGui::Separator();
+		ImGui::RadioButton("Pin Curve", &mPinCurve, 0); ImGui::SameLine();
+		ImGui::RadioButton("Unpin Curve", &mPinCurve, 1);
+		ImGui::Separator();
 		ImGui::Text("Add: Hold the left CTRL and left-click the mouse");
 		ImGui::Text("Edit: Hold the left mouse button and move");
 		ImGui::Text("Delete: Right-click the mouse");
@@ -529,6 +532,16 @@ void CurveViewer::deleteKeyPoint(double screenX, double screenY, ASplineVec3 & s
 	}
 }
 
+void CurveViewer::pinStatePoint(double screenX, double screenY, ASplineVec3& spline)
+{
+	pickPoint(screenX, screenY, spline);
+	vec3 clickPos = vec3(screenX, screenY, 0);
+	// if you have selected state point
+	if (mPickedPointType == 2) {
+		spline.appendPin(mPickedPointId, clickPos);
+	}
+}
+
 void CurveViewer::movePoint(double screenX, double screenY, ASplineVec3 & spline)
 {
 	if (mPickedPointId == -1) { return; }
@@ -613,7 +626,11 @@ void CurveViewer::mouseButtonCallback(GLFWwindow * window, int button, int actio
 	{
 		appendKeyPoint(xpos, ypos, mSplineVec3);
 	}
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && mHoldLCtrl)
+	{
+		pinStatePoint(xpos, ypos, mSplineVec3);
+	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS && !mHoldLCtrl)
 	{
 		deleteKeyPoint(xpos, ypos, mSplineVec3);
 	}
