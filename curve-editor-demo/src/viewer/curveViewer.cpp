@@ -15,7 +15,7 @@ CurveViewer::CurveViewer(const std::string& name) :
 	mControlPointLine = std::make_unique<Drawable>();
 	mAnimatedPoint = std::make_unique<Drawable>();
 
-	mRotatedModel = std::make_unique<ObjModel>();
+	mRotatedModel = std::make_unique<ObjModel>();f
 
 	mRotatedModel->loadObj("../obj/wahoo.obj");
 
@@ -465,7 +465,7 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 		if ((clickPos - pointPos).Length() < mPickRadius)
 		{
 			mPickedPointType = 2;
-			mPickedPointId = i;
+			mPickedPointId = frame;
 			return;
 		}
 		i++;

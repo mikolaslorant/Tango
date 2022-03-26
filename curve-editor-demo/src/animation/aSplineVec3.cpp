@@ -64,11 +64,78 @@ ASplineVec3::InterpolationType ASplineVec3::getInterpolationType() const
 	return mInterpolator->getType();
 }
 
-void ASplineVec3::editStatePoint(int statePointId, const vec3& value)
+void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
-	assert(statePointId >= 0);
+	assert(frameNumber >= 0);
+	// create state
 	State state;
+	state.frameNumber = frameNumber;
 	state.point = value;
+	// Check curve segment
+	std::unique_ptr<CurveSegment> curveSegment = std::make_unique<CurveSegment>();
+	// Assume translation
+	curveSegment->type = TRANSLATION;
+	// we set curve segment id to left keyframe number
+	curveSegment->id = frameNumber / 120;
+	// Create key
+	std::unique_ptr<KeyFrame> leftKeyframe = std::make_unique<KeyFrame>();
+	int i = frameNumber / 120;
+	leftKeyframe->t = mKeys[i].first;
+	leftKeyframe->frameNumber = (i) * 120;
+	// Calculate tanget minus 
+	//leftKeyframe->tangentPlus = 
+	std::unique_ptr<KeyFrame> rightKeyframe = std::make_unique<KeyFrame>();
+	rightKeyframe->t = mKeys[i + 1].first;
+	rightKeyframe->frameNumber = (i + 1) * 120;
+	// set keyframes for curve segment
+	curveSegment->keyLeft = leftKeyframe.get();
+	curveSegment->keyRight = rightKeyframe.get();
+
+	vec3 tangentVec;
+	// Left key frame tangents
+	if (i == 0)
+	{
+		tangentVec = (mKeys[i + 1].second - mKeys[i].second);
+		
+		leftKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
+	}
+	else
+	{
+		tangentVec = (mKeys[i + 1].second - mKeys[i - 1].second) * 0.5;
+
+		leftKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		leftKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
+	}
+	if (i + 1 == mKeys.size() - 1)
+	{
+		tangentVec = (mKeys[i + 1].second - mKeys[i].second);
+		rightKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
+	}
+	else
+	{
+		tangentVec = (mKeys[i + 2].second - mKeys[i].second) * 0.5;
+		rightKeyframe->tangentPlus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentPlus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentPlus[2] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentMinus[0] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentMinus[1] = Tangent(tangentVec[0], tangentVec[1]);
+		rightKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
+	}
+
+	// set curve segment for my state
+	state.curveSegment = curveSegment.get();
+	// call move on pointers created
+	mSolver->curveSegments.push_back(std::move(curveSegment));
+	mSolver->keys.push_back(std::move(leftKeyframe));
+	mSolver->keys.push_back(std::move(rightKeyframe));
 	mSolver->solve(state);
 	computeControlPoints();
 	cacheCurve();
@@ -442,6 +509,7 @@ void ACubicInterpolatorVec3::computeControlPoints(
 	vec3 b0, b1, b2, b3;
 	b0 = keys[0].second;
 	b1 = keys[0].second + (1 / 3.) * 0.5 * (keys[1].second - startPoint);
+	// b1 = b0 + (1/3) S0
 	if (keys.size() == 2)
 	{
 		b2 = keys[1].second - (1 / 3.) * 0.5 * (endPoint - keys[0].second);
