@@ -14,6 +14,9 @@ struct Tangent
 	{}
 	double x;
 	double y;
+
+	Tangent() {}
+	~Tangent() {}
 };
 
 class KeyFrame
@@ -23,6 +26,9 @@ public:
 	int frameNumber;
 	Tangent tangentMinus[3];
 	Tangent tangentPlus[3];
+
+	KeyFrame() : t(0.0), frameNumber(0), tangentMinus{ Tangent(), Tangent(), Tangent() }, tangentPlus{ Tangent(), Tangent(), Tangent() } {}
+	~KeyFrame() {}
 };
 
 class CurveSegment
@@ -38,7 +44,9 @@ public:
 	KeyFrame* keyLeft;
 	// frame corresponding to right Key
 	KeyFrame* keyRight;
-	
+
+	CurveSegment() : type(TRANSLATION), id(0), joint("test"), keyLeft(nullptr), keyRight(nullptr) {}
+	~CurveSegment() {}
 };
 
 class Contact
@@ -48,21 +56,30 @@ public:
 	CurveSegment* curveSegment;
 	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 	vec3 point;
+
+	Contact() : id(0), curveSegment(nullptr), orderedAffectedCurveSegments(), point(vec3()) {}
+	~Contact() {}
 };
 
 class State
 {
 public:
 	// Cs or Csj
-	std::vector<CurveSegment*> orderedAffectedCurveSegments;
-	CurveSegment* curveSegment;
-	vec3 point;
 	int frameNumber;
+	CurveSegment* curveSegment;
+	std::vector<CurveSegment*> orderedAffectedCurveSegments;
+	vec3 point;
+	
+
+	State() : frameNumber(0), curveSegment(nullptr), orderedAffectedCurveSegments(), point(vec3()) {}
+	~State() {}
 };
 
 class Pin : public State
 {
-	
+public:
+	Pin() : State() {}
+	~Pin() {}
 };
 
 
