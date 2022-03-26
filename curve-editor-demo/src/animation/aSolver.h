@@ -57,16 +57,18 @@ class State
 {
 public:
 	// Cs or Csj
+
 	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 	CurveSegment* curveSegment;
 	vec3 point;
 	int frameNumber;
+	bool isPinned = false;
 };
 
-class Pin : public State
-{
-	
-};
+//class Pin : public State
+//{
+//	
+//};
 
 
 
@@ -75,7 +77,8 @@ class ASolver
 public:
 	// C : all curve segments affected
 	std::vector<std::unique_ptr<CurveSegment>> curveSegments;
-	std::vector<std::unique_ptr<Pin>>  pins;
+	//std::vector<std::unique_ptr<Pin>>  pins;
+	std::vector<std::unique_ptr<State>>  pins;
 	std::vector<std::unique_ptr<Contact>> contacs;
 	std::vector<std::unique_ptr<KeyFrame>> keys;
 	// solve for new state S' passed as parameter

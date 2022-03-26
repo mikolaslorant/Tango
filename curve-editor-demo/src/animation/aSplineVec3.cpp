@@ -67,10 +67,10 @@ ASplineVec3::InterpolationType ASplineVec3::getInterpolationType() const
 void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
 	assert(frameNumber >= 0);
-	// create state
-	State state;
-	state.frameNumber = frameNumber;
-	state.point = value;
+	// create mActiveState
+	
+	mActiveState.frameNumber = frameNumber;
+	mActiveState.point = value;
 	// Check curve segment
 	std::unique_ptr<CurveSegment> curveSegment = std::make_unique<CurveSegment>();
 	// Assume translation
@@ -130,13 +130,13 @@ void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 		rightKeyframe->tangentMinus[2] = Tangent(tangentVec[0], tangentVec[1]);
 	}
 
-	// set curve segment for my state
-	state.curveSegment = curveSegment.get();
+	// set curve segment for my mActiveState
+	mActiveState.curveSegment = curveSegment.get();
 	// call move on pointers created
 	mSolver->curveSegments.push_back(std::move(curveSegment));
 	mSolver->keys.push_back(std::move(leftKeyframe));
 	mSolver->keys.push_back(std::move(rightKeyframe));
-	mSolver->solve(state);
+	mSolver->solve(mActiveState);
 	computeControlPoints();
 	cacheCurve();
 }
@@ -217,6 +217,13 @@ void ASplineVec3::appendKey(const vec3& value, bool updateCurve)
 		double lastT = mKeys[mKeys.size() - 1].first;
 		appendKey(lastT + 1, value, updateCurve);
 	}
+}
+
+void ASplineVec3::appendPin(int frameNumber, const vec3& value)
+{
+	std::unique_ptr<State> pinState = std::make_unique<State>();
+	pinState->isPinned = true;
+	//mSolver->pins.push_back()
 }
 
 void ASplineVec3::deleteKey(int keyID)
