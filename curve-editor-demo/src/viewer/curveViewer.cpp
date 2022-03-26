@@ -15,7 +15,7 @@ CurveViewer::CurveViewer(const std::string& name) :
 	mControlPointLine = std::make_unique<Drawable>();
 	mAnimatedPoint = std::make_unique<Drawable>();
 
-	mRotatedModel = std::make_unique<ObjModel>();f
+	mRotatedModel = std::make_unique<ObjModel>();
 
 	mRotatedModel->loadObj("../obj/wahoo.obj");
 

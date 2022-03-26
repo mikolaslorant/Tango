@@ -6,6 +6,6 @@ void ASolver::solve(const State& newState)
 	std::unique_ptr<CurveSegment> curveSegment = std::make_unique<CurveSegment>();
 	// Assume translation
 	curveSegment->type = TRANSLATION;
-	curveSegment->id
+	curveSegment->id;
 
 }

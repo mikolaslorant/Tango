@@ -10,6 +10,8 @@ enum CurveType {
 
 struct Tangent
 {
+	Tangent() : x(0.f), y(0.f)
+	{}
 	Tangent(double x, double y) : x(x), y(y)
 	{}
 	double x;
@@ -23,6 +25,7 @@ public:
 	int frameNumber;
 	Tangent tangentMinus[3];
 	Tangent tangentPlus[3];
+	
 };
 
 class CurveSegment
