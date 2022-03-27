@@ -5,7 +5,7 @@
 #include <Eigen\Core>
 
 
-void ASolver::solve(const State& newState)
+void ASolver::solve(State& newState)
 {
 
 	// compute Q matrix
@@ -23,10 +23,8 @@ void ASolver::solve(const State& newState)
 		{
 
 		}
-		else if (curveSegment->type)
 
 	}
-	Js.col()
 
 
 }

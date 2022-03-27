@@ -457,7 +457,7 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 	mPickedPointId = -1;
 	vec3 clickPos = vec3(screenX, screenY, 0);
 	// check for picked states -- needs to be done before data points
-	int i = 0;
+	int i = 1;
 	for (int frame = 10; i < (spline.getNumKeys() - 1) * 11; frame+=10)
 	{
 		if (frame % 120 == 0)
@@ -468,7 +468,7 @@ void CurveViewer::pickPoint(double screenX, double screenY, const ASplineVec3& s
 		if ((clickPos - pointPos).Length() < mPickRadius)
 		{
 			mPickedPointType = 2;
-			mPickedPointId = i;
+			mPickedPointId = frame;
 			return;
 		}
 		i++;
