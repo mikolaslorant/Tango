@@ -77,6 +77,9 @@ void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 void ASplineVec3::editKey(int keyID, const vec3& value)
 {
 	assert(keyID >= 0 && keyID < mKeys.size());
+	if (isKeyPinned(keyID)) {
+		return;
+	}
 	mKeys[keyID].second = value;
 	computeControlPoints();
 	cacheCurve();
@@ -168,10 +171,38 @@ void ASplineVec3::deleteKey(int keyID)
 	cacheCurve();
 }
 
+void ASplineVec3::pinCurve(int keyID)
+{
+	assert(keyID >= 0 && keyID < mKeys.size());
+	mPinnedKeys.push_back(keyID);
+	if ((keyID + 1) < mKeys.size()) {
+		mPinnedKeys.push_back(keyID + 1);
+	}
+}
+
 vec3 ASplineVec3::getKey(int keyID) const
 {
 	assert(keyID >= 0 && keyID < mKeys.size());
 	return mKeys[keyID].second;
+}
+
+std::vector<vec3> ASplineVec3::getPinPoints() const {
+	std::vector<vec3> points;
+	for (auto& it : mSolver->pins) {
+		// Do stuff
+		points.push_back(it.second->point);
+	}
+	return points;
+}
+
+bool ASplineVec3::isStatePinned(int keyID) const
+{
+	return (mSolver->pins.find(keyID) != mSolver->pins.end());
+}
+
+bool ASplineVec3::isKeyPinned(int keyID) const
+{
+	return (std::find(mPinnedKeys.begin(), mPinnedKeys.end(), keyID) != mPinnedKeys.end());
 }
 
 int ASplineVec3::getNumKeys() const
@@ -271,6 +302,11 @@ vec3* ASplineVec3::getControlPointsData()
 int ASplineVec3::getNumCurveSegments() const
 {
 	return mCachedCurve.size();
+}
+
+int ASplineVec3::getNumPinPoints() const
+{
+	return mSolver->pins.size();
 }
 
 vec3 ASplineVec3::getCurvePoint(int i) const

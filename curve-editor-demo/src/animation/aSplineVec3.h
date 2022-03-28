@@ -32,22 +32,25 @@ public:
     InterpolationType getInterpolationType() const;
 
     vec3 getValue(double t) const;
-    void setActiveState(State *mActiveState, int frameNumber, const vec3& value, CurveSegment* curveSegment, KeyFrame* leftKeyframe, KeyFrame* rightKeyframe);
     void editStatePoint(int statePointId, const vec3& value);
     void editControlPoint(int ctrlPointID, const vec3& value);
     void appendKey(double time, const vec3& value, bool updateCurve = true);
     int insertKey(double time, const vec3& value, bool updateCurve = true);
     void editKey(int keyID, const vec3& value);
     void appendKey(const vec3& value, bool updateCurve = true);
-    //void appendPin(const vec3& value, bool updateCurve = true);
     void appendPin(int frameNumber, const vec3& value);
     void deleteKey(int keyID);
+    void pinCurve(int keyID);
     vec3 getKey(int keyID) const;
+    std::vector<vec3> getPinPoints() const;
+    bool isStatePinned(int keyID) const;
+    bool isKeyPinned(int keyID) const;
     vec3 getControlPoint(int ID) const;
     int getNumControlPoints() const;
     int getNumKeys() const;
 
     int getNumCurveSegments() const;
+    int getNumPinPoints() const;
     vec3 getCurvePoint(int i) const;
 
     void clear();
@@ -69,6 +72,7 @@ protected:
     ASolver* mSolver;
     //std::unique_ptr<State> mActiveState;
     std::vector<Key> mKeys;
+    std::vector<int> mPinnedKeys;
     std::vector<vec3> mCtrlPoints;
     
     vec3 mStartPoint, mEndPoint; // for controlling end point behavior
