@@ -7,13 +7,14 @@
 #pragma warning(disable:4244)
 
 
-ASplineVec3::ASplineVec3() : mInterpolator(new ABernsteinInterpolatorVec3())
+ASplineVec3::ASplineVec3() : mInterpolator(new ABernsteinInterpolatorVec3()), mSolver(new ASolver())
 {
 }
 
 ASplineVec3::~ASplineVec3()
 {
 	if (mInterpolator) delete mInterpolator;
+	if (mSolver) delete mSolver;
 }
 
 void ASplineVec3::setFramerate(double fps)
@@ -63,9 +64,11 @@ ASplineVec3::InterpolationType ASplineVec3::getInterpolationType() const
 	return mInterpolator->getType();
 }
 
-void ASplineVec3::editStatePoint(int statePointId, const vec3& value)
+void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
-	assert(statePointId >= 0);
+	assert(frameNumber >= 0);
+	State state(frameNumber, value, false, mKeys, *mSolver);
+	mSolver->solve(state);
 	computeControlPoints();
 	cacheCurve();
 }
@@ -74,6 +77,9 @@ void ASplineVec3::editStatePoint(int statePointId, const vec3& value)
 void ASplineVec3::editKey(int keyID, const vec3& value)
 {
 	assert(keyID >= 0 && keyID < mKeys.size());
+	if (isKeyPinned(keyID)) {
+		return;
+	}
 	mKeys[keyID].second = value;
 	computeControlPoints();
 	cacheCurve();
@@ -148,6 +154,15 @@ void ASplineVec3::appendKey(const vec3& value, bool updateCurve)
 	}
 }
 
+void ASplineVec3::appendPin(int frameNumber, const vec3& value)
+{
+	assert(frameNumber >= 0);
+	if (mSolver->pins.find(frameNumber) == mSolver->pins.end())
+	{
+		mSolver->pins.insert({ frameNumber, std::make_unique<State>(frameNumber, value, true, mKeys, *mSolver) });
+	}
+}
+
 void ASplineVec3::deleteKey(int keyID)
 {
 	assert(keyID >= 0 && keyID < mKeys.size());
@@ -156,10 +171,38 @@ void ASplineVec3::deleteKey(int keyID)
 	cacheCurve();
 }
 
+void ASplineVec3::pinCurve(int keyID)
+{
+	assert(keyID >= 0 && keyID < mKeys.size());
+	mPinnedKeys.push_back(keyID);
+	if ((keyID + 1) < mKeys.size()) {
+		mPinnedKeys.push_back(keyID + 1);
+	}
+}
+
 vec3 ASplineVec3::getKey(int keyID) const
 {
 	assert(keyID >= 0 && keyID < mKeys.size());
 	return mKeys[keyID].second;
+}
+
+std::vector<vec3> ASplineVec3::getPinPoints() const {
+	std::vector<vec3> points;
+	for (auto& it : mSolver->pins) {
+		// Do stuff
+		points.push_back(it.second->point);
+	}
+	return points;
+}
+
+bool ASplineVec3::isStatePinned(int keyID) const
+{
+	return (mSolver->pins.find(keyID) != mSolver->pins.end());
+}
+
+bool ASplineVec3::isKeyPinned(int keyID) const
+{
+	return (std::find(mPinnedKeys.begin(), mPinnedKeys.end(), keyID) != mPinnedKeys.end());
 }
 
 int ASplineVec3::getNumKeys() const
@@ -259,6 +302,11 @@ vec3* ASplineVec3::getControlPointsData()
 int ASplineVec3::getNumCurveSegments() const
 {
 	return mCachedCurve.size();
+}
+
+int ASplineVec3::getNumPinPoints() const
+{
+	return mSolver->pins.size();
 }
 
 vec3 ASplineVec3::getCurvePoint(int i) const
@@ -438,6 +486,7 @@ void ACubicInterpolatorVec3::computeControlPoints(
 	vec3 b0, b1, b2, b3;
 	b0 = keys[0].second;
 	b1 = keys[0].second + (1 / 3.) * 0.5 * (keys[1].second - startPoint);
+	// b1 = b0 + (1/3) S0
 	if (keys.size() == 2)
 	{
 		b2 = keys[1].second - (1 / 3.) * 0.5 * (endPoint - keys[0].second);

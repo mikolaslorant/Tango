@@ -21,6 +21,8 @@ add_library(curve STATIC
     ./src/animation/aRotation.cpp
     ./src/animation/aSplineQuat.h
     ./src/animation/aSplineQuat.cpp
+    ./src/animation/aSolver.cpp
+    ./src/animation/aSolver.h
 )
 
 target_include_directories(curve PUBLIC
