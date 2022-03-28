@@ -1,6 +1,9 @@
 #pragma once
 #include <unordered_map>
+#include <string>
+#include "aSplineVec3.h"
 #include "aVector.h"
+
 
 #define FPS 120
 typedef std::pair<double, vec3> Key;
@@ -16,13 +19,13 @@ class ASolver
 public:
 	// C : all curve segments affected
 
-	std::unordered_map<int, std::unique_ptr<CurveSegment>> curveSegments;
+	std::unordered_map<std::string, std::unique_ptr<CurveSegment>> curveSegments;
+	std::unordered_map<std::string, std::unique_ptr<KeyFrame>> keyFrames;
 	std::unordered_map<int, std::unique_ptr<State>>  pins;
-	std::unordered_map<int, std::unique_ptr<Contact>> contacs;
-	std::unordered_map<int, std::unique_ptr<KeyFrame>> keyFrames;
-	std::unordered_map<int, std::unique_ptr<Tangent>> tangents;
+	std::unordered_map<std::string, std::unique_ptr<Contact>> contacs;
 	// solve for new state S' passed as parameter
 	void solve(State& newState);
+	static std::string getKey(int type, int component, int frameNumber);
 };
 
 
@@ -30,6 +33,12 @@ enum CurveType {
 	TRANSLATION,
 	ROTATION,
 	SCALE
+};
+
+enum Component {
+	X,
+	Y,
+	Z
 };
 
 struct Tangent
@@ -40,39 +49,45 @@ struct Tangent
 	double y;
 
 	Tangent() {}
+
 	~Tangent() {}
 };
-
-
 
 class KeyFrame
 {
 public:
+	std::string id;
+	double value;
 	double t;
 	int frameNumber;
 	Tangent tangentMinus;
 	Tangent tangentPlus;
 
 	KeyFrame() : t(0.0), frameNumber(0), tangentMinus(Tangent()), tangentPlus(Tangent()) {}
-	KeyFrame(int frameNumber, const std::vector<Key> &mKeys) {
-		this->frameNumber = frameNumber;
+
+	KeyFrame(int frameNumber, const std::vector<Key>& mKeys, int component, std::string& id)
+	{
 		int i = frameNumber / FPS;
+		this->id = id;
+		this->value = mKeys[i].second[component];
 		this->t = mKeys[i].first;
+		this->frameNumber = frameNumber;
+		
 		vec3 tangentVec;
 		if (i == 0)
 		{
 			tangentVec = (mKeys[i + 1].second - mKeys[i].second);
-			this->tangentPlus = Tangent(tangentVec[0], tangentVec[1]);
+			this->tangentPlus = Tangent(mKeys[i + 1].first - mKeys[i].first, tangentVec[component]);
 		}
 		else if (i == mKeys.size() - 1)
 		{
 			tangentVec = (mKeys[i].second - mKeys[i - 1].second);
-			this->tangentMinus = Tangent(tangentVec[0], tangentVec[1]);
+			this->tangentMinus = Tangent(mKeys[i].first - mKeys[i - 1].first, tangentVec[component]);
 		}
 		else {
 			tangentVec = (mKeys[i + 1].second - mKeys[i - 1].second) * 0.5;
-			this->tangentPlus = Tangent(tangentVec[0], tangentVec[1]);
-			this->tangentMinus = Tangent(tangentVec[0], tangentVec[1]);
+			this->tangentPlus = Tangent((mKeys[i + 1].first - mKeys[i - 1].first) * 0.5, tangentVec[component]);
+			this->tangentMinus = Tangent((mKeys[i + 1].first - mKeys[i - 1].first) * 0.5, tangentVec[component]);
 		}
 	}
 	~KeyFrame() {}
@@ -83,8 +98,10 @@ class CurveSegment
 public:
 	// translation, rotation
 	CurveType type;
+	// x, y, z
+	int component;
 	// id of curve
-	int id;
+	std::string id;
 	// joint
 	std::string joint;
 	// frame corresponding to left key
@@ -94,20 +111,28 @@ public:
 
 	CurveSegment() : type(TRANSLATION), id(0), joint("test"), keyLeft(nullptr), keyRight(nullptr) {}
 
-	CurveSegment(int frameNumber, const std::vector<Key> &mKeys, ASolver& solver) : type(TRANSLATION), id((frameNumber / FPS) * FPS)
+	CurveSegment(int component, int frameNumber, const std::vector<Key> &mKeys, ASolver& solver) : component(component), type(TRANSLATION)
 	{
-		if (solver.keyFrames.find(this->id) == solver.keyFrames.end())
+		std::string leftKey = ASolver::getKey(TRANSLATION, component, frameNumber);
+		id = leftKey;
+		std::string rightKey = ASolver::getKey(TRANSLATION, component, frameNumber + FPS);
+		
+		if (solver.keyFrames.find(leftKey) == solver.keyFrames.end())
 		{
-			solver.keyFrames.insert({ this->id, std::make_unique<KeyFrame>(this->id, mKeys) });
+			solver.keyFrames.insert({ leftKey, std::make_unique<KeyFrame>(frameNumber, mKeys, component, leftKey) });
 		}
-		if (solver.keyFrames.find(this->id + FPS) == solver.keyFrames.end())
+
+		this->keyLeft = solver.keyFrames[leftKey].get();
+
+		if (solver.keyFrames.find(rightKey) == solver.keyFrames.end())
 		{
-			solver.keyFrames.insert({ this->id + FPS, std::make_unique<KeyFrame>(this->id + FPS, mKeys) });
+			solver.keyFrames.insert({ rightKey, std::make_unique<KeyFrame>(frameNumber + FPS, mKeys, component, rightKey) });
 		}
-		this->keyLeft = solver.keyFrames[this->id].get();
-		this->keyRight = solver.keyFrames[this->id + FPS].get();
+		this->keyRight = solver.keyFrames[rightKey].get();
 	}
 	~CurveSegment() {}
+
+	double dCdT(int frameNumber, int component, int index);
 };
 
 class Contact
@@ -127,21 +152,25 @@ class State
 public:
 	// Cs or Csj
 	int frameNumber;
-	CurveSegment* curveSegment;
 	vec3 point;
 	std::vector<CurveSegment*> orderedAffectedCurveSegments;
 	bool isPinned;
 
-	State() : frameNumber(0), curveSegment(nullptr), point(vec3()), orderedAffectedCurveSegments(), isPinned(false) {}
+	State() : frameNumber(0), point(vec3()), orderedAffectedCurveSegments(), isPinned(false) {}
 	State(int frameNumber, const vec3& value, bool isPinned, const std::vector<Key>& mKeys, ASolver& solver)
 		: frameNumber(frameNumber), point(value), isPinned(isPinned)
 	{
-		if (solver.curveSegments.find(frameNumber) == solver.curveSegments.end())
+		for (int i = 0; i < 3; i++)
 		{
-			solver.curveSegments.insert({frameNumber, std::make_unique<CurveSegment>(frameNumber, mKeys, solver)});
+
+			std::string key = ASolver::getKey(TRANSLATION, i, frameNumber);
+			if (solver.curveSegments.find(key) == solver.curveSegments.end())
+			{
+				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, frameNumber, mKeys, solver) });
+			}
+			// set curve segment for my mActiveState
+			this->orderedAffectedCurveSegments.push_back(solver.curveSegments[key].get());
 		}
-		// set curve segment for my mActiveState
-		this->curveSegment = solver.curveSegments[frameNumber].get();
 	}
 	~State() {}
 };

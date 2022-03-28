@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 
+class ASolver;
 class AInterpolatorVec3;
 
 // class for managing keys, control points, and curves
@@ -32,7 +33,6 @@ public:
     InterpolationType getInterpolationType() const;
 
     vec3 getValue(double t) const;
-    void setActiveState(State *mActiveState, int frameNumber, const vec3& value, CurveSegment* curveSegment, KeyFrame* leftKeyframe, KeyFrame* rightKeyframe);
     void editStatePoint(int statePointId, const vec3& value);
     void editControlPoint(int ctrlPointID, const vec3& value);
     void appendKey(double time, const vec3& value, bool updateCurve = true);
