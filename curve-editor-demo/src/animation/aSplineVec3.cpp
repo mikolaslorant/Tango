@@ -68,7 +68,7 @@ void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
 	assert(frameNumber >= 0);
 	State state(frameNumber, value, false, mKeys, *mSolver);
-	mSolver->solve(state);
+	mSolver->solve(state, mKeys.size());
 	computeControlPoints();
 	cacheCurve();
 }
