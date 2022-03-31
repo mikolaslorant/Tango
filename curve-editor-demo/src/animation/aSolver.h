@@ -132,7 +132,8 @@ public:
 	}
 	~CurveSegment() {}
 
-	double dCdT(int frameNumber, int component, int index);
+	double evaluateBezierGivenTangents(int frameNumber, vec3& tangentPlus, vec3& tangentMinus) const;
+	double dCdT(int frameNumber, int component, int index) const;
 };
 
 class Contact
@@ -173,6 +174,8 @@ public:
 		}
 	}
 	~State() {}
+
+	vec3 getCurrentValue() const;
 };
 
 

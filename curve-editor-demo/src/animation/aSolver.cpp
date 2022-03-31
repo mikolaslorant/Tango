@@ -1,8 +1,10 @@
 #include "aSolver.h"
-
+#include <string>
 #include <cmath>
 #include <Eigen\Dense>
 #include <Eigen\Core>
+
+
 
 
 void ASolver::solve(State& newState)
@@ -33,6 +35,7 @@ void ASolver::solve(State& newState)
 		Eigen::Vector3d dSdC = Eigen::Vector3d::Zero();
 		if (C[i].type == TRANSLATION)
 		{
+			// For the curve viewer we only consider one joint
 			dSdC(C[i].component) = 1;
 		}
 		else if (C[i].type == ROTATION)
@@ -52,21 +55,50 @@ void ASolver::solve(State& newState)
 	Q *= 2;
 	// Linear term of the optimizaiton
 	Eigen::VectorXd b = Eigen::VectorXd::Zero(numberOfVariables);
+	vec3 ret = newState.point - newState.getCurrentValue();
+	Eigen::Vector3d deltaS = Eigen::Vector3d::Zero(3);
+	for (int i = 0; i < 3; i++)
+	{
+		deltaS(i) = ret[i];
+	}
+	b = (-2 * wd * deltaS.transpose() * Js).transpose();
+	// 
 
 
-
+	
 }
 
-double CurveSegment::dCdT(int frameNumber, int component, int index)
+vec3 State::getCurrentValue() inline const
+{
+	vec3 ret;
+	for (int i = 0; i < 3; i++)
+	{	
+		vec3 tangentPlus = vec3(orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.x, orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.y, 0);
+		vec3 tangentMinus = vec3(orderedAffectedCurveSegments[i]->keyRight->tangentMinus.x, orderedAffectedCurveSegments[i]->keyLeft->tangentMinus.y, 0);
+		ret[i] = orderedAffectedCurveSegments[i]->evaluateBezierGivenTangents(i, tangentPlus, tangentMinus);
+	}
+	return ret;
+}
+
+double CurveSegment::evaluateBezierGivenTangents(int frameNumber, vec3& tangentPlus, vec3& tangentMinus) inline const
+{
+	double u = (frameNumber* FPS - keyLeft->t) / (keyRight->t - keyLeft->t);
+	vec3 b0(keyLeft->value, keyLeft->t, 0);
+	vec3 b3(keyRight->value, keyRight->t, 0);
+	vec3 b1 = (1 / 3.0) * tangentPlus + b0;
+	vec3 b2 = -(1 / 3.0) * tangentMinus + b3;
+	vec3 result = b0 * std::pow(1 - u, 3) + b1 * 3 * u * std::pow(1 - u, 2) + b2 * 3 * std::pow(u, 2) * (1 - u) + b3 * std::pow(u, 3);
+	return result[1];
+}
+
+
+double CurveSegment::dCdT(int frameNumber, int component, int index) const
 {
 	// delta tangents
 	double dT = 0.0000001;
-	double u = (frameNumber * FPS - keyLeft->t) / (keyRight->t - keyLeft->t);
 	// This will be evaluated using Maya functions.
 	vec3 tangentPlus = vec3(keyLeft->tangentPlus.x, keyLeft->tangentPlus.y, 0);
 	vec3 tangentMinus = vec3(keyRight->tangentMinus.x, keyLeft->tangentMinus.y, 0);
-	vec3 b0(keyLeft->value, keyLeft->t, 0);
-	vec3 b3(keyRight->value, keyRight->t, 0);
 	if (index == 0)
 	{
 		tangentPlus[component] += dT;
@@ -75,11 +107,7 @@ double CurveSegment::dCdT(int frameNumber, int component, int index)
 	{
 		tangentMinus[component] += dT;
 	}
-	// Compute middle control points with modified tangents
-	vec3 b1 = (1 / 3.0) * tangentPlus + b0;
-	vec3 b2 = -(1 / 3.0) * tangentMinus + b3;
-	// Evaluate curve value one
-	vec3 evalSecond = b0 * std::pow(1 - u, 3) + b1 * 3 * u * std::pow(1 - u, 2) + b2 * 3 * std::pow(u, 2) * (1 - u) + b3 * std::pow(u, 3);
+	double evalSecond = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);
 	if (index == 0)
 	{
 		tangentPlus[component] -= 2 * dT;
@@ -88,12 +116,8 @@ double CurveSegment::dCdT(int frameNumber, int component, int index)
 	{
 		tangentMinus[component] -= 2 * dT;
 	}
-	// ReCompute middle control points with modified tangents
-	b1 = (1 / 3.0) * tangentPlus + b0;
-	b2 = -(1 / 3.0) * tangentMinus + b3;
-	// Evalue curve value two
-	vec3 evalFirst = b0 * std::pow(1 - u, 3) + b1 * 3 * u * std::pow(1 - u, 2) + b2 * 3 * std::pow(u, 2) * (1 - u) + b3 * std::pow(u, 3);
-	return (evalSecond[1] - evalFirst[1]) / (2 * dT);
+	double evalFirst = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);;
+	return (evalSecond - evalFirst) / (2 * dT);
 }
 
 std::string ASolver::getKey(int type, int component, int frameNumber)
