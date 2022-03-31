@@ -22,7 +22,8 @@ protected:
 	void updateSplineVec3Type(int newtype, ASplineVec3& spline);
 	void updateSplineQuatType(int newtype, ASplineQuat& spline);
 	void updateSplineEulerType(int newtype, ASplineVec3& spline);
-
+	void drawPinnedPoints(const ASplineVec3& spline);
+	void drawStatePoints(const ASplineVec3& spline);
 	void drawKeyPoints(const ASplineVec3& spline);
 	void drawControlPoints(const ASplineVec3& spline);
 	void drawCurve(const ASplineVec3& spline);
@@ -35,6 +36,7 @@ protected:
 	void pickPoint(double screenX, double screenY, const ASplineVec3& spline);
 	void appendKeyPoint(double screenX, double screenY, ASplineVec3& spline);
 	void deleteKeyPoint(double screenX, double screenY, ASplineVec3& spline);
+	void pinPoint(double screenX, double screenY, ASplineVec3& spline);
 	void movePoint(double screenX, double screenY, ASplineVec3& spline);
 	void resetSplineVec3(ASplineVec3& spline);
 
@@ -52,12 +54,18 @@ protected:
 	ASplineQuat mSplineQuat;
 
 	int mDemo = 0;	// 0 for spline, 1 for rotation
+	int mPinCurve = 0;
 
-	std::unique_ptr<Drawable> mKeyPoints;
+	std::unordered_map<std::string, glm::vec3> mColors;
+
+	std::unique_ptr<Drawable> mUnpinnedKeyPoints;
 	std::unique_ptr<Drawable> mCurveLine;
 	std::unique_ptr<Drawable> mControlPoints;
 	std::unique_ptr<Drawable> mControlPointLine;
 	std::unique_ptr<Drawable> mAnimatedPoint;
+	std::unique_ptr<Drawable> mStatePoints;
+	std::unique_ptr<Drawable> mPinnedStates;
+	std::unique_ptr<Drawable> mPinnedCurveKeys;
 
 	std::unique_ptr<ObjModel> mRotatedModel;
 
@@ -66,7 +74,7 @@ protected:
 	int mRotOrder = mat3::XYZ;	//ZYX, XYZ, YZX, XZY, YXZ, ZXY
 
 	// Record the picked point
-	float mPickRadius = 0.02f;
+	float mPickRadius = 0.01f;
 	int mPickedPointId = -1;
 	int mPickedPointType = 0;	// 0 for key point, 1 for control point
 
