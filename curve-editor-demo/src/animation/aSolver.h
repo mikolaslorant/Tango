@@ -14,7 +14,6 @@
 #define MAX_ACCEPTED_DIFFERENCE_K 0.01
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
-#define NUMCON 0   /* Number of constraints.             */
 
 
 #define FPS 120
