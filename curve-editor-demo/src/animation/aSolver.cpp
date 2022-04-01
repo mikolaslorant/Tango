@@ -39,7 +39,7 @@ void ASolver::solve(State& newState, int totalNumberOfKeys)
 		Eigen::VectorXd lowerBounds = Eigen::VectorXd::Zero(numberOfVariables);
 		Eigen::VectorXd upperBounds = Eigen::VectorXd::Zero(numberOfVariables);
 		Eigen::VectorXd constraintsBounds = Eigen::VectorXd::Zero(ro.size() * 3);
-		std::vector<Eigen::Matrix3Xd> A(ro.size());
+		std::vector<Eigen::Matrix3Xd> A;
 		calculateSolverInputs(newState, ro, C, totalNumberOfKeys, Q, b, lowerBounds, upperBounds, A, constraintsBounds);
 		Eigen::VectorXd solutionDeltaTangents = Eigen::VectorXd::Zero(numberOfVariables);
 		mosekSolve(Q, b, lowerBounds, upperBounds, A, constraintsBounds, solutionDeltaTangents);
@@ -140,7 +140,7 @@ void ASolver::calculateSolverInputs(const State& newState,
 	// Calculate theta current minus the corresponding tangent on the other side of the keyframe.
 	Eigen::VectorXd m = Eigen::VectorXd::Zero(numberOfVariables);
 	Eigen::VectorXd mDelta = Eigen::VectorXd::Zero(numberOfVariables);
-	Eigen::MatrixXd mDeltaMat = Eigen::MatrixXd::Zero(numberOfVariables, numberOfVariables);
+	Eigen::MatrixXd mDeltaMat = Eigen::MatrixXd::Identity(numberOfVariables, numberOfVariables);
 	
 	for (int i = 0; i < C.size(); i++)
 	{
@@ -206,7 +206,10 @@ void ASolver::calculateSolverInputs(const State& newState,
 	// We add stiffness matrix with stiffnes of one
 	Q += Eigen::MatrixXd::Identity(numberOfVariables, numberOfVariables) * wd;
 	// We add the identity matrix for the energy term that tries to keep consecutive tangents the same.
-	mDeltaMat = Eigen::MatrixXd::Identity(numberOfVariables, numberOfVariables) * mDelta;
+	for (int i = 0; i < mDelta.size(); i++)
+	{
+		mDeltaMat(i,i) *= mDelta(i);
+	}
 	Q += mDeltaMat.transpose() * mDeltaMat * wb;
 	// We multiply by two since we divided by two before
 	Q *= 2;
@@ -286,21 +289,21 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 	parseConstraintMatrixA(A, aval, aptrb, aptre, asub);
 	for (int q = 0; q < numberOfVariables; q++)
 	{
-		qsubi.push_back(q);
-		qsubj.push_back(q);
-		qval.push_back(Q(q, q));
+		qsubi[q] = q;
+		qsubj[q] = q;
+		qval[q] = Q(q, q);
 	}
 	if (r == MSK_RES_OK)
 	{
 		/* Create the optimization task. */
-		r = MSK_maketask(env, NUMCON, numberOfVariables, &task);
+		r = MSK_maketask(env, constraintsBounds.size(), numberOfVariables, &task);
 		if (r == MSK_RES_OK)
 		{
 			r = MSK_linkfunctotaskstream(task, MSK_STREAM_LOG, NULL, printstr);
 			/* Append 'NUMCON' empty constraints.
 			 The constraints will initially have no bounds. */
 			if (r == MSK_RES_OK)
-				r = MSK_appendcons(task, NUMCON);
+				r = MSK_appendcons(task, constraintsBounds.size());
 			/* Append 'NUMVAR' variables.
 			The variables will initially be fixed at zero (x=0). */
 			if (r == MSK_RES_OK)
@@ -437,7 +440,7 @@ void ASolver::parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>&A,
 					asub.push_back(i * 3 + k);
 					if (!firstFound)
 					{
-						aptrb.push_back(asub.size()-1);
+						aptrb[j] = asub.size() - 1;
 						firstFound = true;
 					}
 					aptre[j] = asub.size() - 1;
