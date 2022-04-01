@@ -196,11 +196,11 @@ void ASolver::calculateSolverInputs(const State& newState,
 		lowerBounds(i * 4) = 0;
 		upperBounds(i * 4) = C[i]->keyRight->t - C[i]->keyLeft->t;
 		lowerBounds(i * 4 + 1) = phi(ui[C[i]->type], *C[i]->keyLeft, *C[i]->keyRight);
-		lowerBounds(i * 4 + 1) = psi(vi[C[i]->type], *C[i]->keyLeft, *C[i]->keyRight);
+		upperBounds(i * 4 + 1) = psi(vi[C[i]->type], *C[i]->keyLeft, *C[i]->keyRight);
 		lowerBounds(i * 4 + 2) = 0;
 		upperBounds(i * 4 + 2) = C[i]->keyRight->t - C[i]->keyLeft->t;
 		lowerBounds(i * 4 + 3) = -psi(vi[C[i]->type], *C[i]->keyRight, *C[i]->keyLeft);
-		lowerBounds(i * 4 + 3) = -phi(ui[C[i]->type], *C[i]->keyRight, *C[i]->keyLeft);
+		upperBounds(i * 4 + 3) = -phi(ui[C[i]->type], *C[i]->keyRight, *C[i]->keyLeft);
 	}
 	Q += Js.transpose() * Js * wm;
 	// We add stiffness matrix with stiffnes of one

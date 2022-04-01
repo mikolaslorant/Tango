@@ -200,7 +200,7 @@ public:
 			std::string key = ASolver::getKey(TRANSLATION, i, frameNumber);
 			if (solver.curveSegments.find(key) == solver.curveSegments.end())
 			{
-				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, frameNumber, mKeys, solver) });
+				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, (frameNumber / FPS) * FPS, mKeys, solver) });
 			}
 			// set curve segment for my mActiveState
 			this->orderedAffectedCurveSegments.push_back(solver.curveSegments[key].get());
