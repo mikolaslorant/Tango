@@ -97,7 +97,7 @@ public:
     virtual void computeControlPoints(
         const std::vector<ASplineVec3::Key>& keys,
         std::vector<vec3>& ctrlPoints,
-        vec3& startPt, vec3& endPt) {}
+        vec3& startPt, vec3& endPt, ASolver *solver) {}
 
     // The framerate determines the number of samples between each key
     void setFramerate(double fps);
@@ -137,7 +137,7 @@ public:
     virtual void computeControlPoints(
         const std::vector<ASplineVec3::Key>& keys,
         std::vector<vec3>& ctrlPoints,
-        vec3& startPt, vec3& endPt);
+        vec3& startPt, vec3& endPt, ASolver* solver);
 
 protected:
     ACubicInterpolatorVec3(ASplineVec3::InterpolationType t) : AInterpolatorVec3(t) {}

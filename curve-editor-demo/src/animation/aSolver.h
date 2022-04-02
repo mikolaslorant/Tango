@@ -1,8 +1,19 @@
 #pragma once
+
+#include <unordered_set>
 #include <unordered_map>
 #include <string>
+#include <Eigen\Dense>
+#include <Eigen\Core>
 #include "aSplineVec3.h"
 #include "aVector.h"
+#include "mosek.h" /* Include the MOSEK definition file. */
+
+
+#define THRESHOLD_EPSILON 0.0001
+#define MAX_ACCEPTED_DIFFERENCE_K 0.01
+#define MAX_ITERS_TO_SOLVE 5
+#define REGULARIZATION_LAMBDA 0.000001
 
 
 #define FPS 120
@@ -14,18 +25,38 @@ class Contact;
 class KeyFrame;
 class Tangent;
 
+
+static void MSKAPI printstr(void* handle,
+	const char str[])
+{
+	printf("%s", str);
+} /* printstr */
+
 class ASolver
 {
 public:
-	// C : all curve segments affected
-
 	std::unordered_map<std::string, std::unique_ptr<CurveSegment>> curveSegments;
 	std::unordered_map<std::string, std::unique_ptr<KeyFrame>> keyFrames;
 	std::unordered_map<int, std::unique_ptr<State>>  pins;
 	std::unordered_map<std::string, std::unique_ptr<Contact>> contacs;
 	// solve for new state S' passed as parameter
-	void solve(State& newState);
+	void solve(State& newState, int totalNumberOfKeys);
+	void calculateCurveSegmentsThatNeedOptimizing(const State& newState, std::unordered_set<State*>& ro, std::vector<CurveSegment*>& C) const;
+	void calculateSolverInputs(const State& newState, const std::unordered_set<State*>& ro, const std::vector<CurveSegment*>& C, 
+								int totalNumberOfKeys,
+								Eigen::MatrixXd& Q, Eigen::VectorXd& b, Eigen::VectorXd& lowerBounds, Eigen::VectorXd& upperBounds, 
+								std::vector<Eigen::Matrix3Xd>& A, Eigen::VectorXd& constraintsBounds);
+	void mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b, 
+					const Eigen::VectorXd& lowerBounds, const Eigen::VectorXd& upperBounds, 
+					const std::vector<Eigen::Matrix3Xd>& A,
+					const Eigen::VectorXd& constraintsBounds,
+					Eigen::VectorXd& solutionDeltaTangents);
+	void updateTangents(std::vector<CurveSegment*>& C, const Eigen::VectorXd& solutionDeltaTangents);
+	void parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>& A, std::vector<double>& aval, 
+						std::vector<MSKint32t>& aptrb, std::vector<MSKint32t>& aptre, std::vector<MSKint32t>& asub) const;
 	static std::string getKey(int type, int component, int frameNumber);
+	double phi(double ui, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
+	double psi(double vi, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
 };
 
 
@@ -59,6 +90,7 @@ public:
 	std::string id;
 	double value;
 	double t;
+	int keyFrameNumber;
 	int frameNumber;
 	Tangent tangentMinus;
 	Tangent tangentPlus;
@@ -68,6 +100,7 @@ public:
 	KeyFrame(int frameNumber, const std::vector<Key>& mKeys, int component, std::string& id)
 	{
 		int i = frameNumber / FPS;
+		keyFrameNumber = i;
 		this->id = id;
 		this->value = mKeys[i].second[component];
 		this->t = mKeys[i].first;
@@ -167,7 +200,7 @@ public:
 			std::string key = ASolver::getKey(TRANSLATION, i, frameNumber);
 			if (solver.curveSegments.find(key) == solver.curveSegments.end())
 			{
-				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, frameNumber, mKeys, solver) });
+				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, (frameNumber / FPS) * FPS, mKeys, solver) });
 			}
 			// set curve segment for my mActiveState
 			this->orderedAffectedCurveSegments.push_back(solver.curveSegments[key].get());
