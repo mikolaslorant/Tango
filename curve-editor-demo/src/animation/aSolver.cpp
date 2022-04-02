@@ -222,7 +222,7 @@ void ASolver::calculateSolverInputs(const State& newState,
 	{
 		deltaS(i) = ret[i];
 	}
-	b += (-2 * wd * deltaS.transpose() * Js).transpose();
+	b += (-2 * wm * deltaS.transpose() * Js).transpose();
 	// Add m
 	b += (-2 * wb * m);
 
@@ -280,8 +280,6 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 	std::vector<MSKint32t> qsubi(numberOfVariables);
 	std::vector<MSKint32t> qsubj(numberOfVariables);
 	std::vector<double> qval(numberOfVariables);
-	// Solution of the solver
-	std::vector<double> xx(numberOfVariables);
 	// Matrix A information parsed
 	std::vector<double> aval;
 	std::vector<MSKint32t> aptrb(numberOfVariables), aptre(numberOfVariables);
@@ -376,11 +374,11 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 					case MSK_SOL_STA_OPTIMAL:
 						MSK_getxx(task,
 							MSK_SOL_ITR,    /* Request the interior solution. */
-							xx.data());
+							solutionDeltaTangents.data());
 
 						printf("Optimal primal solution\n");
 						for (j = 0; j < numberOfVariables; ++j)
-							printf("x[%d]: %e\n", j, xx[j]);
+							printf("x[%d]: %e\n", j, solutionDeltaTangents[j]);
 
 						break;
 
