@@ -34,3 +34,4 @@ build/*
 debug/*
 *Debug/*
 *build/*
+*3rdparty/*
