@@ -42,7 +42,7 @@ void ASolver::solve(State& newState, int totalNumberOfKeys)
 		std::vector<Eigen::Matrix3Xd> A;
 		calculateSolverInputs(newState, ro, C, totalNumberOfKeys, Q, b, lowerBounds, upperBounds, A, constraintsBounds);
 		Eigen::VectorXd solutionDeltaTangents = Eigen::VectorXd::Zero(numberOfVariables);
-		mosekSolve(Q, b, lowerBounds, upperBounds, A, constraintsBounds, solutionDeltaTangents);
+		//mosekSolve(Q, b, lowerBounds, upperBounds, A, constraintsBounds, solutionDeltaTangents);
 		solutionDeltaTangentsAccumulated += solutionDeltaTangents;
 		updateTangents(C, solutionDeltaTangents);
 		// Check if desired state has been reached.
@@ -263,18 +263,20 @@ void ASolver::calculateSolverInputs(const State& newState,
 }
 
 void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
-							const Eigen::VectorXd& lowerBounds, const Eigen::VectorXd& upperBounds, 
-							const std::vector<Eigen::Matrix3Xd>& A,
-							const Eigen::VectorXd& constraintsBounds,
-							Eigen::VectorXd& solutionDeltaTangents)
+	const Eigen::VectorXd& lowerBounds, const Eigen::VectorXd& upperBounds,
+	const std::vector<Eigen::Matrix3Xd>& A,
+	const Eigen::VectorXd& constraintsBounds,
+	Eigen::VectorXd& solutionDeltaTangents)
 {
 	int numberOfVariables = Q.rows();
+	
 	MSKenv_t      env = NULL;
 	MSKtask_t     task = NULL;
 	MSKrescodee   r;
-	/* Create the mosek environment. */
+	//* Create the mosek environment.
+	
 	r = MSK_makeenv(&env, NULL);
-
+	
 	MSKint32t j;
 	// Q matrix vars
 	std::vector<MSKint32t> qsubi(numberOfVariables);
@@ -284,6 +286,7 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 	std::vector<double> aval;
 	std::vector<MSKint32t> aptrb(numberOfVariables), aptre(numberOfVariables);
 	std::vector<MSKint32t> asub;
+	
 	parseConstraintMatrixA(A, aval, aptrb, aptre, asub);
 	for (int q = 0; q < numberOfVariables; q++)
 	{
@@ -293,58 +296,59 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 	}
 	if (r == MSK_RES_OK)
 	{
-		/* Create the optimization task. */
+		//* Create the optimization task.
 		r = MSK_maketask(env, constraintsBounds.size(), numberOfVariables, &task);
+	}/*
 		if (r == MSK_RES_OK)
 		{
 			r = MSK_linkfunctotaskstream(task, MSK_STREAM_LOG, NULL, printstr);
-			/* Append 'NUMCON' empty constraints.
-			 The constraints will initially have no bounds. */
+			//* Append 'NUMCON' empty constraints.
+			//* The constraints will initially have no bounds.
 			if (r == MSK_RES_OK)
 				r = MSK_appendcons(task, constraintsBounds.size());
-			/* Append 'NUMVAR' variables.
-			The variables will initially be fixed at zero (x=0). */
+			//* Append 'NUMVAR' variables.
+			//* The variables will initially be fixed at zero (x=0).
 			if (r == MSK_RES_OK)
 				r = MSK_appendvars(task, numberOfVariables);
-			/* Optionally add a constant term to the objective. */
+			//* Optionally add a constant term to the objective.
 			if (r == MSK_RES_OK)
 				r = MSK_putcfix(task, 0.0);
 			for (j = 0; j < numberOfVariables && r == MSK_RES_OK; ++j)
 			{
-				/* Set the linear term c_j in the objective.*/
+				//* Set the linear term c_j in the objective.
 				if (r == MSK_RES_OK)
 					r = MSK_putcj(task, j, b(j));
-				/* Set the bounds on variable j.
-				 lowerBounds[j] <= x_j <= upperBounds[j] */
+				//* Set the bounds on variable j.
+				//* lowerBounds[j] <= x_j <= upperBounds[j]
 				if (r == MSK_RES_OK)
 					r = MSK_putvarbound(task,
-						j,           /* Index of variable.*/
-						MSK_BK_RA,      /* Bound key. This value represents that the variable has a range. */
-						lowerBounds(j),      /* Numerical value of lower bound.*/
-						upperBounds(j));     /* Numerical value of upper bound.*/
-				/* Input column j of A */
+						j,           //* Index of variable.
+						MSK_BK_RA,      //* Bound key. This value represents that the variable has a range.
+						lowerBounds(j),      //* Numerical value of lower bound.
+						upperBounds(j));     //* Numerical value of upper bound.
+				//* Input column j of A
 				// TODO
 				if (r == MSK_RES_OK)
 					r = MSK_putacol(task,
-						j,                 /* Variable (column) index.*/
-						aptre[j] - aptrb[j], /* Number of non-zeros in column j.*/
-						asub.data() + aptrb[j],   /* Pointer to row indexes of column j.*/
-						aval.data() + aptrb[j]);  /* Pointer to Values of column j.*/
+						j,                 //* Variable (column) index.
+						aptre[j] - aptrb[j], //* Number of non-zeros in column j.
+						asub.data() + aptrb[j],   //* Pointer to row indexes of column j.
+						aval.data() + aptrb[j]);  //* Pointer to Values of column j.
 			}
-			/* Set the bounds on constraints.
-			for i=1, ...,NUMCON : blc[i] <= constraint i <= buc[i] */
+			//* Set the bounds on constraints.
+			//* for i=1, ...,NUMCON : blc[i] <= constraint i <= buc[i]
 			for (int i = 0; i < constraintsBounds.size() && r == MSK_RES_OK; ++i)
 				r = MSK_putconbound(task,
-					i,           /* Index of constraint.*/
-					MSK_BK_FX,      /* Bound key. In this case it's a fixed value*/
-					constraintsBounds(i),      /* Numerical value of lower bound.*/
-					constraintsBounds(i));     /* Numerical value of upper bound.*/
+					i,           //* Index of constraint.
+					MSK_BK_FX,      //* Bound key. In this case it's a fixed value
+					constraintsBounds(i),      //* Numerical value of lower bound.
+					constraintsBounds(i));     //* Numerical value of upper bound.
 			if (r == MSK_RES_OK)
 			{
-				/*
-				 * The lower triangular part of the Q^o
-				 * matrix in the objective is specified.
-				 * Input the Q^o for the objective. */
+				//*
+				// * The lower triangular part of the Q^o
+				// * matrix in the objective is specified.
+				// * Input the Q^o for the objective.
 
 				r = MSK_putqobj(task, numberOfVariables, qsubi.data(), qsubj.data(), qval.data());
 			}
@@ -355,11 +359,11 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 			{
 				MSKrescodee trmcode;
 
-				/* Run optimizer */
+				//* Run optimizer
 				r = MSK_optimizetrm(task, &trmcode);
 
-				/* Print a summary containing information
-				   about the solution for debugging purposes*/
+				//* Print a summary containing information
+				//*   about the solution for debugging purposes
 				MSK_solutionsummary(task, MSK_STREAM_LOG);
 
 				if (r == MSK_RES_OK)
@@ -373,7 +377,7 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 					{
 					case MSK_SOL_STA_OPTIMAL:
 						MSK_getxx(task,
-							MSK_SOL_ITR,    /* Request the interior solution. */
+							MSK_SOL_ITR,    //* Request the interior solution.
 							solutionDeltaTangents.data());
 
 						printf("Optimal primal solution\n");
@@ -404,7 +408,7 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 
 			if (r != MSK_RES_OK)
 			{
-				/* In case of an error print error code and description. */
+				//* In case of an error print error code and description.
 				char symname[MSK_MAX_STR_LEN];
 				char desc[MSK_MAX_STR_LEN];
 
@@ -418,6 +422,8 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 		MSK_deletetask(&task);
 	}
 	MSK_deleteenv(&env);
+
+*/
 }
 
 void ASolver::parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>&A,

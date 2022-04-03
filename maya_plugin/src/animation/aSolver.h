@@ -46,11 +46,12 @@ public:
 								int totalNumberOfKeys,
 								Eigen::MatrixXd& Q, Eigen::VectorXd& b, Eigen::VectorXd& lowerBounds, Eigen::VectorXd& upperBounds, 
 								std::vector<Eigen::Matrix3Xd>& A, Eigen::VectorXd& constraintsBounds);
-	void mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b, 
+	void mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 					const Eigen::VectorXd& lowerBounds, const Eigen::VectorXd& upperBounds, 
 					const std::vector<Eigen::Matrix3Xd>& A,
 					const Eigen::VectorXd& constraintsBounds,
 					Eigen::VectorXd& solutionDeltaTangents);
+					
 	void updateTangents(std::vector<CurveSegment*>& C, const Eigen::VectorXd& solutionDeltaTangents);
 	void parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>& A, std::vector<double>& aval, 
 						std::vector<MSKint32t>& aptrb, std::vector<MSKint32t>& aptre, std::vector<MSKint32t>& asub) const;
