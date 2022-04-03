@@ -68,7 +68,7 @@ void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
 	assert(frameNumber >= 0);
 	State state(frameNumber, value, false, mKeys, *mSolver);
-	mSolver->solve(state);
+	mSolver->solve(state, mKeys.size());
 	computeControlPoints();
 	cacheCurve();
 }
@@ -286,7 +286,7 @@ void ASplineVec3::computeControlPoints(bool updateEndPoints)
 		n = tmp.Length();
 		mEndPoint = mKeys[totalPoints - 1].second + (tmp / n) * n * 0.25;
 	}
-	mInterpolator->computeControlPoints(mKeys, mCtrlPoints, mStartPoint, mEndPoint);
+	mInterpolator->computeControlPoints(mKeys, mCtrlPoints, mStartPoint, mEndPoint, mSolver);
 }
 
 vec3* ASplineVec3::getCachedCurveData()
@@ -476,25 +476,54 @@ vec3 ABSplineInterpolatorVec3::interpolateSegment(
 	return B03 * ctrlPoints[j - 3] + B13 * ctrlPoints[j - 2] + B23 * ctrlPoints[j - 1] + B33 * ctrlPoints[j];
 }
 
+
 void ACubicInterpolatorVec3::computeControlPoints(
 	const std::vector<ASplineVec3::Key>& keys,
 	std::vector<vec3>& ctrlPoints,
-	vec3& startPoint, vec3& endPoint)
+	vec3& startPoint, vec3& endPoint, ASolver* solver)
 {
 	ctrlPoints.clear();
 	if (keys.size() <= 1) return;
 	vec3 b0, b1, b2, b3;
 	b0 = keys[0].second;
-	b1 = keys[0].second + (1 / 3.) * 0.5 * (keys[1].second - startPoint);
-	// b1 = b0 + (1/3) S0
-	if (keys.size() == 2)
+	if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, 0)) != solver->keyFrames.end())
 	{
-		b2 = keys[1].second - (1 / 3.) * 0.5 * (endPoint - keys[0].second);
+		vec3 tangentPlus;
+		std::string xkey = solver->getKey(TRANSLATION, X, 0);
+		std::string ykey = solver->getKey(TRANSLATION, Y, 0);
+		Tangent tx = solver->keyFrames[xkey]->tangentPlus;
+		Tangent ty = solver->keyFrames[ykey]->tangentPlus;
+		tangentPlus[0] = tx.y / tx.x;
+		tangentPlus[1] = ty.y / ty.x;
+		b1 = b0 + (1 / 3.) * tangentPlus;
 	}
 	else
 	{
-		b2 = keys[1].second - (1 / 3.) * 0.5 * (keys[2].second - keys[0].second);
+		b1 = keys[0].second + (1 / 3.) * 0.5 * (keys[1].second - startPoint);
 	}
+	if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, FPS)) != solver->keyFrames.end())
+	{
+		vec3 tangentMinus;
+		std::string xkey = solver->getKey(TRANSLATION, X, FPS);
+		std::string ykey = solver->getKey(TRANSLATION, Y, FPS);
+		Tangent tx = solver->keyFrames[xkey]->tangentMinus;
+		Tangent ty = solver->keyFrames[ykey]->tangentMinus;
+		tangentMinus[0] = tx.y / tx.x;
+		tangentMinus[1] = ty.y / ty.x;
+		b2 = keys[1].second - (1 / 3.) * tangentMinus;
+	}
+	else
+	{
+		if (keys.size() == 2)
+		{
+			b2 = keys[1].second - (1 / 3.) * 0.5 * (endPoint - keys[0].second);
+		}
+		else
+		{
+			b2 = keys[1].second - (1 / 3.) * 0.5 * (keys[2].second - keys[0].second);
+		}
+	}
+	
 	b3 = keys[1].second;
 	ctrlPoints.push_back(b0);
 	ctrlPoints.push_back(b1);
@@ -505,8 +534,37 @@ void ACubicInterpolatorVec3::computeControlPoints(
 
 		// TODO: compute b0, b1, b2, b3
 		b0 = keys[i].second;
-		b1 = b0 + (1 / 3.) * 0.5 * (keys[i + 1].second - keys[i - 1].second);
-		b2 = keys[i + 1].second - (1 / 3.) * 0.5 * (keys[i + 2].second - keys[i].second);
+		if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, i * FPS)) != solver->keyFrames.end())
+		{
+			vec3 tangentPlus;
+			std::string xkey = solver->getKey(TRANSLATION, X, i * FPS);
+			std::string ykey = solver->getKey(TRANSLATION, Y, i * FPS);
+			Tangent tx = solver->keyFrames[xkey]->tangentPlus;
+			Tangent ty = solver->keyFrames[ykey]->tangentPlus;
+			tangentPlus[0] = tx.y / tx.x;
+			tangentPlus[1] = ty.y / ty.x;
+			b1 = b0 + (1 / 3.) * tangentPlus;
+		}
+		else
+		{
+			b1 = b0 + (1 / 3.) * 0.5 * (keys[i + 1].second - keys[i - 1].second);
+		}
+		if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, (i + 1) * FPS)) != solver->keyFrames.end())
+		{
+			vec3 tangentMinus;
+			std::string xkey = solver->getKey(TRANSLATION, X, (i + 1) * FPS);
+			std::string ykey = solver->getKey(TRANSLATION, Y, (i + 1) * FPS);
+			Tangent tx = solver->keyFrames[xkey]->tangentMinus;
+			Tangent ty = solver->keyFrames[ykey]->tangentMinus;
+			tangentMinus[0] = tx.y / tx.x;
+			tangentMinus[1] = ty.y / ty.x;
+			b2 = keys[i + 1].second - (1 / 3.) * tangentMinus;
+		}
+		else
+		{
+			b2 = keys[i + 1].second - (1 / 3.) * 0.5 * (keys[i + 2].second - keys[i].second);
+		}
+		
 		b3 = keys[i + 1].second;
 		ctrlPoints.push_back(b0);
 		ctrlPoints.push_back(b1);
@@ -515,9 +573,38 @@ void ACubicInterpolatorVec3::computeControlPoints(
 	}
 	if (keys.size() > 2)
 	{
+
 		b0 = keys[keys.size() - 2].second;
-		b1 = keys[keys.size() - 2].second + (1 / 3.) * 0.5 * (keys[keys.size() - 1].second - keys[keys.size() - 3].second);
-		b2 = keys[keys.size() - 1].second - (1 / 3.) * 0.5 * (endPoint - keys[keys.size() - 2].second);
+		if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, (keys.size() - 2) * FPS)) != solver->keyFrames.end())
+		{
+			vec3 tangentPlus;
+			std::string xkey = solver->getKey(TRANSLATION, X, (keys.size() - 2) * FPS);
+			std::string ykey = solver->getKey(TRANSLATION, Y, (keys.size() - 2) * FPS);
+			Tangent tx = solver->keyFrames[xkey]->tangentPlus;
+			Tangent ty = solver->keyFrames[ykey]->tangentPlus;
+			tangentPlus[0] = tx.y / tx.x;
+			tangentPlus[1] = ty.y / ty.x;
+			b1 = b0 + (1 / 3.) * tangentPlus;
+		}
+		else
+		{
+			b1 = keys[keys.size() - 2].second + (1 / 3.) * 0.5 * (keys[keys.size() - 1].second - keys[keys.size() - 3].second);
+		}
+		if (solver->keyFrames.find(solver->getKey(TRANSLATION, X, (keys.size() - 1) * FPS)) != solver->keyFrames.end())
+		{
+			vec3 tangentMinus;
+			std::string xkey = solver->getKey(TRANSLATION, X, (keys.size() - 1) * FPS);
+			std::string ykey = solver->getKey(TRANSLATION, Y, (keys.size() - 1) * FPS);
+			Tangent tx = solver->keyFrames[xkey]->tangentMinus;
+			Tangent ty = solver->keyFrames[ykey]->tangentMinus;
+			tangentMinus[0] = tx.y / tx.x;
+			tangentMinus[1] = ty.y / ty.x;
+			b2 = keys[keys.size() - 1].second - (1 / 3.) * tangentMinus;
+		}
+		else
+		{
+			b2 = keys[keys.size() - 1].second - (1 / 3.) * 0.5 * (endPoint - keys[keys.size() - 2].second);
+		}
 		b3 = keys[keys.size() - 1].second;
 		ctrlPoints.push_back(b0);
 		ctrlPoints.push_back(b1);
