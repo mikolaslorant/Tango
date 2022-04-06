@@ -1,0 +1,145 @@
+global float $stepSize;
+global float $angle;
+global string $grammar;
+global int $iter;
+
+
+global proc createTango() {
+    string $nodes[] = `ls -selection`;
+	for ($node in $nodes)
+	{
+	//From each transform node, obtain its shape node and print its name
+	//string $shapes[] = `listRelatives -shapes $node`;
+	//print("\nshapes:");
+	//print $shapes;
+	//
+	//string $descendents[] = `listRelatives -allDescendents $node`;
+	//print("\ndescendents:");
+	//print $descendents;
+	//
+	//string $parents[] = `listRelatives -allParents $node`;
+	//print("\nparents:");
+	//print $parents;
+	//
+	//string $parent[] = `listRelatives -parent $node`;
+	//print("\nparent:");
+	//print $parent;
+	//
+	//string $path[] = `listRelatives -path $node`;
+	//print("\npath:");
+	//print $path;
+	//
+	//string $children[] = `listRelatives -children $node`;
+	//print("\nchildren:");
+	//print $children;
+	
+	string $connections[] = `listConnections -t animCurve $node`;
+	print("\nconnections:");
+	print $connections;
+	
+	//string $connections[] = `listConnections  -connections $node`;
+	//print("\nconnections:");
+	//print $connections;
+	
+	//string $connectionshapes[] = `listConnections  -shapes $node`;
+	//print("\nconnectionshapes:");
+	//print $connectionshapes;
+	
+	//string $source[] = `listConnections  -source $node`;
+	//print("\nsource:");
+	//print $source;
+	
+	//string $destination[] = `listConnections  -destination $node`;
+	//print("\ndestination:");
+	//print $destination;
+	
+	//string $plugs[] = `listConnections  -plugs $node`;
+	//print("\nplugs:");
+	//print $plugs;
+	}
+	print("Tango is created by command");
+}
+
+global proc int onOpen(string $filename,string $type) {
+    global string $grammar;
+	$fileId = `fopen $filename "r"` ;
+	string $data = `fread $fileId $data`;
+	$grammar = $data;
+	scrollField -edit -text $grammar grammarScroll;
+	/*
+	// reading line 
+	string $nextLine = `fgetline $fileId`;    // fread would read all data from file
+	while (size($nextLine) > 0) {
+        // Strip Whitespace From The Beginning And End Of The Line  
+        string $cleanLine = strip($nextLine) ;
+        // Print Line  
+        print ($cleanLine+"\n") ;
+        // Get Next Line And Continue  
+        $nextLine = `fgetline $fileId` ; 
+    }
+    */
+	return true;
+}
+
+global proc createTango() {
+    global string $grammar;
+    $iter = `intSliderGrp -query -value iterSlider`;
+    $stepSize = `floatSliderGrp -query -value stepSlider`;
+    //print($grammar);
+    
+    $angle = `floatSliderGrp -query -value angleSlider`;
+    
+    TangoCmd -ss $stepSize -t $angle -gr $grammar -itr $iter;
+	print("Tango is created by command");
+}
+
+global proc createTangoCmd() {
+	if (`window -exists tangoWindow`) {
+		deleteUI tangoWindow;  
+	}
+
+	window -title "Create tango Grammar" tangoWindow;
+	if (`windowPref -exists tangoWindow`) {
+		windowPref -remove tangoWindow;  
+	}
+	window -edit -widthHeight 500 500 tangoWindow;
+		columnLayout;
+			scrollField -wordWrap true -text "Editable with word wrap" -editable true grammarScroll;
+			button -label "Browse Grammar File" -command "fileBrowser( \"onOpen\", \"Open\", \"\", 0 );" btn1;
+
+			intSliderGrp -label "Iterations" -field true -value 0.0 -minValue 0.0 -maxValue 10.0  iterSlider;
+			floatSliderGrp -label "Default Step Size" -field true -value 0.0 -minValue 0.0 -maxValue 100.0 stepSlider;
+			floatSliderGrp -label "Default Angle" -field true -value 0.0 -minValue 0.0 -maxValue 360.0 -fieldMinValue 0.0 -fieldMaxValue 360.0 angleSlider;
+			
+			button -label "Create" -command "createTango()";
+		setParent..;    
+	showWindow tangoWindow;
+}
+
+global proc createTangoNode() {
+    createNode transform -n tango1;
+	createNode mesh -n tangoShape1 -p tango1;
+	sets -add initialShadingGroup tangoShape1;
+	createNode TangoNode -n TangoNode1;
+	connectAttr time1.outTime TangoNode1.time;
+	connectAttr TangoNode1.outputMesh tangoShape1.inMesh;
+	print("tango Node is getting created");
+}
+
+global string $gMainWindow;
+setParent $gMainWindow;
+
+if(`menu -exists tangoMenu`) {
+	deleteUI tangoMenu;
+}
+if(`menuItem -exists tangoCmdMenu`) {
+	deleteUI tangoCmdMenu;
+}
+if(`menuItem -exists tangoNodeMenu`) {
+	deleteUI tangoNodeMenu;
+}
+
+menu -label "tango" -tearOff true tangoMenu;
+menuItem -label "tango Command" -command "createTangoCmd()" tangoCmdMenu;
+menuItem -label "tango Node" -command "createTangoNode()" tangoNodeMenu;
+//setParent..

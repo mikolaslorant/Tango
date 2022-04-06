@@ -1,0 +1,82 @@
+// variable for selected item / rig
+global float $keyLeft;
+global float $keyRight;
+global int $currentTime;
+ 
+global proc createTango() {
+    string $nodes[] = `ls -selection`;
+	$currentTime = `currentTime -query`;
+	print("\ncurrentTime:");
+	print $currentTime;
+	for ($node in $nodes)
+	{
+		//From each transform node, obtain its shape node and print its name	
+		string $animCurves[] = `listConnections -type animCurve $node`;
+		
+		for ($animCurve in $animCurves) {
+			string $query = `nodeType $animCurve`;
+			if (0 == (strcmp("animCurveTL", $query))) {
+				print("\nanimCurve:");
+				print $animCurve;
+				float $frames[] = sort(`keyframe -q $animCurve`);
+				$keyLeft = $frames[0];
+				$keyRight = $frames[size($frames)-1];
+				int $keyLeftFound = false;
+				int $keyRightFound = false;
+				for( $frame in $frames ) {
+					if ( $frame < $currentTime ) {
+						$keyLeft = $frame;
+						$keyLeftFound = true;
+					}
+					if ( $frame > $currentTime && $keyRightFound == false) {
+						$keyRight = $frame;
+						$keyRightFound = true;
+					}
+				}
+				
+				print("\nstartTime:");
+				print $keyLeft;
+				print("\nendTime:");
+				print $keyRight;
+			}
+		}
+	}
+	//print("Tango is created by command");
+}
+
+/*
+global proc createTangoCmd() {
+	if (`window -exists tangoCmdWindow`) {
+		deleteUI tangoCmdWindow;  
+	}
+
+	if (`windowPref -exists tangoWindow`) {
+		windowPref -remove tangoWindow;  
+	}
+	window -title "Tango Curve Editor" tangoWindow;
+	window -edit -widthHeight 500 500 tangoWindow;
+		columnLayout;
+			button -label "View curve" -command "createTango()";
+		setParent..;    
+	showWindow tangoWindow;
+}
+*/
+
+// Create Tango Menu Items
+global string $gMainWindow;
+setParent $gMainWindow;
+
+if(`menu -exists tangoMenu`) {
+	deleteUI tangoMenu;
+}
+if(`menuItem -exists tangoCmdMenu`) {
+	deleteUI tangoCmdMenu;
+}
+if(`menuItem -exists tangoNodeMenu`) {
+	deleteUI tangoNodeMenu;
+}
+
+menu -label "Tango Editor" -tearOff true tangoMenu;
+menuItem -label "Curve Control" -command "createTango()" tangoCmdMenu;
+
+//setParent..
