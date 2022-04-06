@@ -4,6 +4,28 @@ global string $grammar;
 global int $iter;
 
 
+proc vector getWorldSpacePosition(string $object, string $parent, float $time)
+      {
+      float $v[]=`getAttr -time $time ($parent + ".worldMatrix")`;
+      
+      matrix $mat[4][4]=<< $v[ 0], $v[ 1], $v[ 2], $v[ 3];
+      					   $v[ 4], $v[ 5], $v[ 6], $v[ 7];
+      					   $v[ 8], $v[ 9], $v[10], $v[11];
+      					   $v[12], $v[13], $v[14], $v[15] >>;   
+      
+      float $x = `getAttr -t $time ($object + ".tx")`;
+      float $y = `getAttr -t $time ($object + ".ty")`;
+      float $z = `getAttr -t $time ($object + ".tz")`;   
+      
+      matrix $v1[1][4]=<<$x, $y, $z, 1>>;
+      matrix $v2[1][4]=$v1*$mat;
+      print $v1;
+      print $v2;
+      print $mat;
+      return <<$v2[0][0], $v2[0][1],  $v2[0][2]>>;
+      	
+      }
+
 global proc createTango() {
     string $nodes[] = `ls -selection`;
 	for ($node in $nodes)
