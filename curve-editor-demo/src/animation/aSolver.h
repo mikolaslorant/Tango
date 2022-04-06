@@ -11,7 +11,7 @@
 
 
 #define THRESHOLD_EPSILON 0.0001
-#define MAX_ACCEPTED_DIFFERENCE_K 0.01
+#define MAX_ACCEPTED_DIFFERENCE_K 0.5
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
 
@@ -35,11 +35,17 @@ static void MSKAPI printstr(void* handle,
 class ASolver
 {
 public:
+	// 
+	MSKenv_t env;
+	MSKrescodee r;
 	std::unordered_map<std::string, std::unique_ptr<CurveSegment>> curveSegments;
 	std::unordered_map<std::string, std::unique_ptr<KeyFrame>> keyFrames;
 	std::unordered_map<int, std::unique_ptr<State>>  pins;
 	std::unordered_map<std::string, std::unique_ptr<Contact>> contacs;
-	// solve for new state S' passed as parameter
+	
+	ASolver();
+	~ASolver();
+
 	void solve(State& newState, int totalNumberOfKeys);
 	void calculateCurveSegmentsThatNeedOptimizing(const State& newState, std::unordered_set<State*>& ro, std::vector<CurveSegment*>& C) const;
 	void calculateSolverInputs(const State& newState, const std::unordered_set<State*>& ro, const std::vector<CurveSegment*>& C, 
@@ -57,6 +63,7 @@ public:
 	static std::string getKey(int type, int component, int frameNumber);
 	double phi(double ui, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
 	double psi(double vi, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
+	
 };
 
 
@@ -74,13 +81,11 @@ enum Component {
 
 struct Tangent
 {
-	Tangent(double x, double y) : x(x), y(y)
-	{}
 	double x;
 	double y;
-
-	Tangent() {}
-
+	Tangent() : x(0.0), y(0.0) {}
+	Tangent(double xVal, double yVal) : x(xVal), y(yVal)
+	{}
 	~Tangent() {}
 };
 
@@ -94,8 +99,6 @@ public:
 	int frameNumber;
 	Tangent tangentMinus;
 	Tangent tangentPlus;
-
-	KeyFrame() : t(0.0), frameNumber(0), tangentMinus(Tangent()), tangentPlus(Tangent()) {}
 
 	KeyFrame(int frameNumber, const std::vector<Key>& mKeys, int component, std::string& id)
 	{
@@ -165,7 +168,7 @@ public:
 	}
 	~CurveSegment() {}
 
-	double evaluateBezierGivenTangents(int frameNumber, vec3& tangentPlus, vec3& tangentMinus) const;
+	double evaluateBezierGivenTangents(int frameNumber, const vec3& tangentPlus, const vec3& tangentMinus) const;
 	double dCdT(int frameNumber, int component, int index) const;
 };
 

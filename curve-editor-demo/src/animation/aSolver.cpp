@@ -6,14 +6,24 @@
 #include <Eigen\Core>
 
 
+ASolver::ASolver() : r(MSK_makeenv(&env, NULL)), curveSegments(), keyFrames(), pins(), contacs()
+{
+
+}
+
+ASolver::~ASolver()
+{
+	MSK_deleteenv(&env);
+}
+
 double ASolver::phi(double ui, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) inline const
 {
-	return (4 / 3.0) * (ui - std::min(currentKeyFrame.value, otherKeyFrame.value));
+	return (4.0 / 3.0) * (ui - std::min(currentKeyFrame.value, otherKeyFrame.value));
 }
 
 double ASolver::psi(double vi, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) inline const
 {
-	return (4 / 3.0) * (vi - std::max(currentKeyFrame.value, otherKeyFrame.value));
+	return (4.0 / 3.0) * (vi - std::max(currentKeyFrame.value, otherKeyFrame.value));
 }
 
 void ASolver::solve(State& newState, int totalNumberOfKeys)
@@ -31,6 +41,7 @@ void ASolver::solve(State& newState, int totalNumberOfKeys)
 	int numberOfVariables = C.size() * 4;
 	// All of the delta thetas summed together between iterations
 	Eigen::VectorXd solutionDeltaTangentsAccumulated = Eigen::VectorXd::Zero(numberOfVariables);
+	vec3 currentVal = newState.getCurrentValue();
 	while (iters < MAX_ITERS_TO_SOLVE)
 	{
 		
@@ -45,8 +56,10 @@ void ASolver::solve(State& newState, int totalNumberOfKeys)
 		mosekSolve(Q, b, lowerBounds, upperBounds, A, constraintsBounds, solutionDeltaTangents);
 		solutionDeltaTangentsAccumulated += solutionDeltaTangents;
 		updateTangents(C, solutionDeltaTangents);
-		// Check if desired state has been reached.
-		if ((newState.getCurrentValue()-newState.point).SqrLength() < MAX_ACCEPTED_DIFFERENCE_K)
+		// Check if desired state has been reached
+		vec3 currrr = newState.getCurrentValue();
+		double dif = (currrr - newState.point).Length();
+		if (dif < MAX_ACCEPTED_DIFFERENCE_K)
 		{
 			break;
 		}
@@ -173,8 +186,8 @@ void ASolver::calculateSolverInputs(const State& newState,
 		}
 		else
 		{
-			m(i * 4) = C[i]->keyLeft->tangentMinus.x + C[i]->keyLeft->tangentPlus.x;
-			m(i * 4 + 1) = C[i]->keyLeft->tangentMinus.y + C[i]->keyLeft->tangentPlus.y;
+			m(i * 4) = C[i]->keyLeft->tangentMinus.x - C[i]->keyLeft->tangentPlus.x;
+			m(i * 4 + 1) = C[i]->keyLeft->tangentMinus.y - C[i]->keyLeft->tangentPlus.y;
 			mDelta(i * 4) = 1;
 			mDelta(i * 4 + 1) = 1;
 		}
@@ -187,8 +200,8 @@ void ASolver::calculateSolverInputs(const State& newState,
 		}
 		else
 		{
-			m(i * 4 + 2) = C[i]->keyRight->tangentMinus.x + C[i]->keyRight->tangentPlus.x;
-			m(i * 4 + 3) = C[i]->keyRight->tangentMinus.y + C[i]->keyRight->tangentPlus.y;
+			m(i * 4 + 2) = - C[i]->keyRight->tangentMinus.x + C[i]->keyRight->tangentPlus.x;
+			m(i * 4 + 3) = - C[i]->keyRight->tangentMinus.y + C[i]->keyRight->tangentPlus.y;
 			mDelta(i * 4 + 2) = 1;
 			mDelta(i * 4 + 3) = 1;
 		}
@@ -202,6 +215,8 @@ void ASolver::calculateSolverInputs(const State& newState,
 		lowerBounds(i * 4 + 3) = -psi(vi[C[i]->type], *C[i]->keyRight, *C[i]->keyLeft);
 		upperBounds(i * 4 + 3) = -phi(ui[C[i]->type], *C[i]->keyRight, *C[i]->keyLeft);
 	}
+	std::cout << "JS MATRIX" << std::endl;
+	std::cout << Js << std::endl;
 	Q += Js.transpose() * Js * wm;
 	// We add stiffness matrix with stiffnes of one
 	Q += Eigen::MatrixXd::Identity(numberOfVariables, numberOfVariables) * wd;
@@ -215,8 +230,8 @@ void ASolver::calculateSolverInputs(const State& newState,
 	Q *= 2;
 	// Add regularizing term in case matrix Q is not full rank
 	Q += Eigen::MatrixXd::Identity(numberOfVariables, numberOfVariables) * REGULARIZATION_LAMBDA;
-
-	vec3 ret = newState.point - newState.getCurrentValue();
+	vec3 currentValue = newState.getCurrentValue();
+	vec3 ret = newState.point - currentValue;
 	Eigen::Vector3d deltaS = Eigen::Vector3d::Zero(3);
 	for (int i = 0; i < 3; i++)
 	{
@@ -225,7 +240,10 @@ void ASolver::calculateSolverInputs(const State& newState,
 	b += (-2 * wm * deltaS.transpose() * Js).transpose();
 	// Add m
 	b += (-2 * wb * m);
-
+	std::cout << "Q MATRIX" << std::endl;
+	std::cout << Q << std::endl;
+	std::cout << "b vector" << std::endl;
+	std::cout << b << std::endl;
 	// Calculate constraints
 	int constraintBoundIdx = 0;
 	for (const auto& ro : ro)
@@ -269,11 +287,8 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 							Eigen::VectorXd& solutionDeltaTangents)
 {
 	int numberOfVariables = Q.rows();
-	MSKenv_t      env = NULL;
 	MSKtask_t     task = NULL;
-	MSKrescodee   r;
 	/* Create the mosek environment. */
-	r = MSK_makeenv(&env, NULL);
 
 	MSKint32t j;
 	// Q matrix vars
@@ -417,7 +432,6 @@ void ASolver::mosekSolve(const Eigen::MatrixXd& Q, const Eigen::VectorXd& b,
 		}
 		MSK_deletetask(&task);
 	}
-	MSK_deleteenv(&env);
 }
 
 void ASolver::parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>&A,
@@ -457,31 +471,31 @@ vec3 State::getCurrentValue() inline const
 	for (int i = 0; i < 3; i++)
 	{	
 		vec3 tangentPlus = vec3(orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.x, orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.y, 0);
-		vec3 tangentMinus = vec3(orderedAffectedCurveSegments[i]->keyRight->tangentMinus.x, orderedAffectedCurveSegments[i]->keyLeft->tangentMinus.y, 0);
-		ret[i] = orderedAffectedCurveSegments[i]->evaluateBezierGivenTangents(i, tangentPlus, tangentMinus);
+		vec3 tangentMinus = vec3(orderedAffectedCurveSegments[i]->keyRight->tangentMinus.x, orderedAffectedCurveSegments[i]->keyRight->tangentMinus.y, 0);
+		ret[i] = orderedAffectedCurveSegments[i]->evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);
 	}
 	return ret;
 }
 
-double CurveSegment::evaluateBezierGivenTangents(int frameNumber, vec3& tangentPlus, vec3& tangentMinus) inline const
+double CurveSegment::evaluateBezierGivenTangents(int frameNumber, const vec3& tangentPlus, const vec3& tangentMinus) inline const
 {
-	double u = (frameNumber* FPS - keyLeft->t) / (keyRight->t - keyLeft->t);
-	vec3 b0(keyLeft->value, keyLeft->t, 0);
-	vec3 b3(keyRight->value, keyRight->t, 0);
+	double u = (((double)frameNumber) / FPS - keyLeft->t) / (keyRight->t - keyLeft->t);
+	vec3 b0(keyLeft->t, keyLeft->value, 0);
+	vec3 b3(keyRight->t, keyRight->value, 0);
 	vec3 b1 = (1 / 3.0) * tangentPlus + b0;
 	vec3 b2 = -(1 / 3.0) * tangentMinus + b3;
-	vec3 result = b0 * std::pow(1 - u, 3) + b1 * 3 * u * std::pow(1 - u, 2) + b2 * 3 * std::pow(u, 2) * (1 - u) + b3 * std::pow(u, 3);
-	return result[1];
+	vec3 ret = b0 * std::pow(1 - u, 3) + b1 * 3 * u * std::pow(1 - u, 2) + b2 * 3 * std::pow(u, 2) * (1 - u) + b3 * std::pow(u, 3);
+	return ret[1];
 }
 
 
 double CurveSegment::dCdT(int frameNumber, int component, int index) const
 {
 	// delta tangents
-	double dT = 0.0000001;
+	double dT = 0.000001;
 	// This will be evaluated using Maya functions.
 	vec3 tangentPlus = vec3(keyLeft->tangentPlus.x, keyLeft->tangentPlus.y, 0);
-	vec3 tangentMinus = vec3(keyRight->tangentMinus.x, keyLeft->tangentMinus.y, 0);
+	vec3 tangentMinus = vec3(keyRight->tangentMinus.x, keyRight->tangentMinus.y, 0);
 	if (index == 0)
 	{
 		tangentPlus[component] += dT;
@@ -490,7 +504,7 @@ double CurveSegment::dCdT(int frameNumber, int component, int index) const
 	{
 		tangentMinus[component] += dT;
 	}
-	double evalSecond = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);
+ 	double evalSecond = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);
 	if (index == 0)
 	{
 		tangentPlus[component] -= 2 * dT;
@@ -499,7 +513,7 @@ double CurveSegment::dCdT(int frameNumber, int component, int index) const
 	{
 		tangentMinus[component] -= 2 * dT;
 	}
-	double evalFirst = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);;
+	double evalFirst = evaluateBezierGivenTangents(frameNumber, tangentPlus, tangentMinus);
 	return (evalSecond - evalFirst) / (2 * dT);
 }
 

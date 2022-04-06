@@ -558,11 +558,11 @@ void ACubicInterpolatorVec3::computeControlPoints(
 			Tangent ty = solver->keyFrames[ykey]->tangentMinus;
 			tangentMinus[0] = tx.y / tx.x;
 			tangentMinus[1] = ty.y / ty.x;
-			b2 = keys[i + 1].second - (1 / 3.) * tangentMinus;
+			b2 = keys[i + 1].second - (1 / 3.0) * tangentMinus;
 		}
 		else
 		{
-			b2 = keys[i + 1].second - (1 / 3.) * 0.5 * (keys[i + 2].second - keys[i].second);
+			b2 = keys[i + 1].second - (1 / 3.0) * 0.5 * (keys[i + 2].second - keys[i].second);
 		}
 		
 		b3 = keys[i + 1].second;
