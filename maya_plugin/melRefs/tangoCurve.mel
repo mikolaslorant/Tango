@@ -1,11 +1,3 @@
-// variable for selected item / rig
-//float $pos = 0.0;
-//				for(int $i = $keyLeft; $i < $keyRight; $i = $i + 10) {
-//					$pos = `getAttr -time $i ($animCurve + ".o")`;
-//					//print $pos;
-//					$editPoints = ($editPoints + " " + $pos);
-//				}
-
 
 global proc getAnimCurves() {
 	print("getAnimCurve is called");
@@ -20,7 +12,6 @@ global proc getAnimCurves() {
 		print $currentTime;
 		
 		string $shapes[] = `listRelatives -shapes $node`;
-		//getWorldSpacePosition($node, $currentTime);
 		string $animCurves[] = `listConnections -type animCurve $node`;
 		string $editPoints = "";
 		
@@ -31,7 +22,6 @@ global proc getAnimCurves() {
 			string $query = `nodeType $animCurve`;
 			
 			if (0 == (strcmp("animCurveTL", $query))) {
-				$editPoints = $editPoints + " -ep ";
 				float $keyFrames[] = sort(`keyframe -q $animCurve`);
 				$keyLeft = int($keyFrames[0]);
 				$keyRight = int($keyFrames[size($keyFrames)-1]);
@@ -52,66 +42,30 @@ global proc getAnimCurves() {
 				print("\nstartTime:");
 				print $keyLeft;
 				print("\nendTime:");
-				print $keyRight;
-				
-				int $i = 0;
-				for($i = int($keyLeft); $i < int($keyRight); $i = $i + 10) {
-					float $pos = `getAttr -time $i ($animCurve + ".o")`;
-					//print $pos;
-					$editPoints = ($editPoints + " " + $pos);
-				}
-				print("\neditPoints:");
-				print $editPoints;
-				
+				print $keyRight;				
 			}
 		}
-		//string $editPoints = "";
-		//int $i = 0;
-		//for($i = int(global $keyLeft); $i < int(global $keyRight); $i = $i + 10) {
-		//	$editPoints = $editPoints + " -ep ";
-		//	for ($animCurve in $animCurves) {
-		//		string $query = `nodeType $animCurve`;
-		//			if (0 == (strcmp("animCurveTL", $query))) {
-		//			float $pos = `getAttr -time $i ($animCurve + ".o")`;
-		//			//print $pos;
-		//			$editPoints = ($editPoints + " " + $pos);
-		//		}
-		//	}
-		//}
-		print("\neditPoints:");
-		print $editPoints;
+		
+		int $i = 0;
+		for($i = $keyLeft; $i < $keyRight; $i = $i + 10) {
+			$editPoints = $editPoints + " -ep ";
+			for ($animCurve in $animCurves) {
+				string $query = `nodeType $animCurve`;
+					if (0 == (strcmp("animCurveTL", $query))) {
+					float $pos = `getAttr -time $i ($animCurve + ".o")`;
+					$editPoints = ($editPoints + " " + $pos);
+				}
+			}
+		}
 		if($editPoints != "") {
 			$cmd = ("curve " + $editPoints + ";") ;
 		}
 	}
 	if(size($nodes) != 0) {
-		print($cmd);
-		//eval($cmd);
+		eval($cmd);
 	}
 	print("Tango is created by command");
 }
-
-global proc viewCurve() {
-	getAnimCurves();
-}
-
-/*
-global proc createTangoCmd() {
-	if (`window -exists tangoCmdWindow`) {
-		deleteUI tangoCmdWindow;  
-	}
-
-	if (`windowPref -exists tangoWindow`) {
-		windowPref -remove tangoWindow;  
-	}
-	window -title "Tango Curve Editor" tangoWindow;
-	window -edit -widthHeight 500 500 tangoWindow;
-		columnLayout;
-			button -label "View curve" -command "createTango()";
-		setParent..;    
-	showWindow tangoWindow;
-}
-*/
 
 // Create Tango Menu Items
 global string $gMainWindow;
@@ -130,5 +84,3 @@ if(`menuItem -exists tangoNodeMenu`) {
 print("Calling getAnimCurve");
 menu -label "Tango Editor" -tearOff true tangoMenu;
 menuItem -label "Curve Control" -command "getAnimCurves()" tangoCmdMenu;
-
-//setParent..
