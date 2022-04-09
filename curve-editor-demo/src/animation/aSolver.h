@@ -7,16 +7,18 @@
 #include <Eigen\Core>
 #include "aSplineVec3.h"
 #include "aVector.h"
-#include "mosek.h" /* Include the MOSEK definition file. */
+#include "mosek.h" 
+/* Include the MOSEK definition file. */
 
 
+//#define DEBUG
 #define THRESHOLD_EPSILON 0.0001
-#define MAX_ACCEPTED_DIFFERENCE_K 0.5
+#define MAX_ACCEPTED_DIFFERENCE_K 0.001
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
-
-
+#define TAU 6.28318530718
 #define FPS 120
+
 typedef std::pair<double, vec3> Key;
 
 class CurveSegment;
@@ -169,6 +171,9 @@ public:
 	~CurveSegment() {}
 
 	double evaluateBezierGivenTangents(int frameNumber, const vec3& tangentPlus, const vec3& tangentMinus) const;
+	// method based on stackoverflow post: 
+	// https://stackoverflow.com/questions/51879836/cubic-bezier-curves-get-y-for-given-x-special-case-where-x-of-control-points
+	double getTGivenX(double x, double pa, double pb, double pc, double pd) const;
 	double dCdT(int frameNumber, int component, int index) const;
 };
 
@@ -199,11 +204,11 @@ public:
 	{
 		for (int i = 0; i < 3; i++)
 		{
-
-			std::string key = ASolver::getKey(TRANSLATION, i, frameNumber);
+			int curveFrameNumber = (frameNumber / FPS) * FPS;
+			std::string key = ASolver::getKey(TRANSLATION, i, curveFrameNumber);
 			if (solver.curveSegments.find(key) == solver.curveSegments.end())
 			{
-				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, (frameNumber / FPS) * FPS, mKeys, solver) });
+				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, curveFrameNumber, mKeys, solver) });
 			}
 			// set curve segment for my mActiveState
 			this->orderedAffectedCurveSegments.push_back(solver.curveSegments[key].get());

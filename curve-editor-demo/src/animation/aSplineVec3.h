@@ -90,7 +90,7 @@ public:
     virtual void interpolate(
         const std::vector<ASplineVec3::Key>& keys,
         const std::vector<vec3>& ctrlPoints,
-        std::vector<vec3>& curve);
+        std::vector<vec3>& curve, ASolver* solver);
 
     // Given an ordered list of keys, compute corresponding control points
     // The start and end points are additionally set to specify the behavior at the endpoints
