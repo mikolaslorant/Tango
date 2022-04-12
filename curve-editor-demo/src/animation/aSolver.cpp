@@ -141,7 +141,7 @@ void ASolver::calculateSolverInputs(const State& newState,
 	double ui[] = { -1000, -180 };
 	double vi[] = { 1000, 180 };
 	// Energy weights
-	double wm = 100, wd = 1.0, wb = 1.0;
+	double wm = 100, wd = 1.0, wb = 0.0;
 	int numberOfVariables = C.size() * 4;
 	// One Matrix 3 by 4 because of x and y coordinate for left and right tangent of curve segments that represent a rotation R or translation T 
 	// Each curve segment has three dimensions i.e. (Rx, Ry, Rz)
