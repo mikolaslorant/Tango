@@ -13,7 +13,7 @@
 
 //#define DEBUG
 #define THRESHOLD_EPSILON 0.0001
-#define MAX_ACCEPTED_DIFFERENCE_K 0.001
+#define MAX_ACCEPTED_DIFFERENCE_K 3000
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
 #define TAU 6.28318530718
@@ -65,7 +65,6 @@ public:
 	static std::string getKey(int type, int component, int frameNumber);
 	double phi(double ui, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
 	double psi(double vi, const KeyFrame& currentKeyFrame, const KeyFrame& otherKeyFrame) const;
-	
 };
 
 

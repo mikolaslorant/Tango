@@ -54,9 +54,19 @@ void ASolver::solve(State& newState, int totalNumberOfKeys)
 		Eigen::VectorXd solutionDeltaTangents = Eigen::VectorXd::Zero(numberOfVariables);
 		mosekSolve(Q, b, lowerBounds, upperBounds, A, constraintsBounds, solutionDeltaTangents);
 		solutionDeltaTangentsAccumulated += solutionDeltaTangents;
+#if defined(DEBUG)
+		std::cout << "CURRENT VALUE BEFORE SOLVING" << std::endl;
+		std::cout << newState.getCurrentValue() << std::endl;
+		std::cout << "TARGET VALUE" << std::endl;
+		std::cout << newState.point << std::endl;
+#endif
 		updateTangents(C, solutionDeltaTangents);
 		// Check if desired state has been reached
 		vec3 currrr = newState.getCurrentValue();
+#if defined(DEBUG)
+		std::cout << " NEW CURRENT VALUE" << std::endl;
+		std::cout << currrr << std::endl;
+#endif
 		double dif = (currrr - newState.point).Length();
 		if (dif < MAX_ACCEPTED_DIFFERENCE_K)
 		{
@@ -141,7 +151,7 @@ void ASolver::calculateSolverInputs(const State& newState,
 	double ui[] = { -1000, -180 };
 	double vi[] = { 1000, 180 };
 	// Energy weights
-	double wm = 100, wd = 1.0, wb = 0.0;
+	double wm = 100, wd = 0.5, wb = 0.5;
 	int numberOfVariables = C.size() * 4;
 	// One Matrix 3 by 4 because of x and y coordinate for left and right tangent of curve segments that represent a rotation R or translation T 
 	// Each curve segment has three dimensions i.e. (Rx, Ry, Rz)
@@ -239,7 +249,7 @@ void ASolver::calculateSolverInputs(const State& newState,
 	}
 	b += (-2 * wm * deltaS.transpose() * Js).transpose();
 	// Add m
-	b += (-2 * wb * m);
+	b += (-2 * wb * m.transpose() * mDeltaMat).transpose();
 #if defined(DEBUG)
 	std::cout << "Q MATRIX" << std::endl;
 	std::cout << Q << std::endl;
