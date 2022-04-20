@@ -267,7 +267,7 @@ vec3 ASplineVec3::getValue(double t) const
 
 void ASplineVec3::cacheCurve()
 {
-	mInterpolator->interpolate(mKeys, mCtrlPoints, mCachedCurve);
+	mInterpolator->interpolate(mKeys, mCtrlPoints, mCachedCurve, mSolver);
 }
 
 void ASplineVec3::computeControlPoints(bool updateEndPoints)
@@ -335,7 +335,7 @@ double AInterpolatorVec3::getDeltaTime() const
 }
 
 void AInterpolatorVec3::interpolate(const std::vector<ASplineVec3::Key>& keys,
-	const std::vector<vec3>& ctrlPoints, std::vector<vec3>& curve)
+	const std::vector<vec3>& ctrlPoints, std::vector<vec3>& curve, ASolver* solver)
 {
 	vec3 val = 0.0;
 	double u = 0.0;
@@ -352,8 +352,19 @@ void AInterpolatorVec3::interpolate(const std::vector<ASplineVec3::Key>& keys,
 			// u = 1.0 when t = keys[segment].first
 			u = (t - keys[segment].first) / (keys[segment + 1].first - keys[segment].first);
 			val = interpolateSegment(keys, ctrlPoints, segment, u);
-			curve.push_back(val);
+
+			curve.push_back(val);/*
+			int frameNumber = t / FPS;
+			std::string key = ASolver::getKey(TRANSLATION, 0, frameNumber);
+			if (solver->curveSegments.find(key) != solver->curveSegments.end())
+			{
+				vec3 val3(0, 0, 0);
+
+				State state = State(frameNumber, val3, false, keys, *solver);
+				vec3 val2 = state.getCurrentValue();
+			}*/
 		}
+			
 	}
 	// add last point
 	if (keys.size() > 1)
@@ -558,11 +569,11 @@ void ACubicInterpolatorVec3::computeControlPoints(
 			Tangent ty = solver->keyFrames[ykey]->tangentMinus;
 			tangentMinus[0] = tx.y / tx.x;
 			tangentMinus[1] = ty.y / ty.x;
-			b2 = keys[i + 1].second - (1 / 3.) * tangentMinus;
+			b2 = keys[i + 1].second - (1 / 3.0) * tangentMinus;
 		}
 		else
 		{
-			b2 = keys[i + 1].second - (1 / 3.) * 0.5 * (keys[i + 2].second - keys[i].second);
+			b2 = keys[i + 1].second - (1 / 3.0) * 0.5 * (keys[i + 2].second - keys[i].second);
 		}
 		
 		b3 = keys[i + 1].second;

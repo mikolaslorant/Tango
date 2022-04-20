@@ -7,16 +7,18 @@
 #include <Eigen\Core>
 #include "aSplineVec3.h"
 #include "aVector.h"
-#include "mosek.h" /* Include the MOSEK definition file. */
+#include "mosek.h" 
+/* Include the MOSEK definition file. */
 
 
+//#define DEBUG
 #define THRESHOLD_EPSILON 0.0001
-#define MAX_ACCEPTED_DIFFERENCE_K 0.01
+#define MAX_ACCEPTED_DIFFERENCE_K 3000
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
-
-
+#define TAU 6.28318530718
 #define FPS 120
+
 typedef std::pair<double, vec3> Key;
 
 class CurveSegment;
@@ -35,11 +37,17 @@ static void MSKAPI printstr(void* handle,
 class ASolver
 {
 public:
+	// 
+	MSKenv_t env;
+	MSKrescodee r;
 	std::unordered_map<std::string, std::unique_ptr<CurveSegment>> curveSegments;
 	std::unordered_map<std::string, std::unique_ptr<KeyFrame>> keyFrames;
 	std::unordered_map<int, std::unique_ptr<State>>  pins;
 	std::unordered_map<std::string, std::unique_ptr<Contact>> contacs;
-	// solve for new state S' passed as parameter
+	
+	ASolver();
+	~ASolver();
+
 	void solve(State& newState, int totalNumberOfKeys);
 	void calculateCurveSegmentsThatNeedOptimizing(const State& newState, std::unordered_set<State*>& ro, std::vector<CurveSegment*>& C) const;
 	void calculateSolverInputs(const State& newState, const std::unordered_set<State*>& ro, const std::vector<CurveSegment*>& C, 
@@ -74,13 +82,11 @@ enum Component {
 
 struct Tangent
 {
-	Tangent(double x, double y) : x(x), y(y)
-	{}
 	double x;
 	double y;
-
-	Tangent() {}
-
+	Tangent() : x(0.0), y(0.0) {}
+	Tangent(double xVal, double yVal) : x(xVal), y(yVal)
+	{}
 	~Tangent() {}
 };
 
@@ -94,8 +100,6 @@ public:
 	int frameNumber;
 	Tangent tangentMinus;
 	Tangent tangentPlus;
-
-	KeyFrame() : t(0.0), frameNumber(0), tangentMinus(Tangent()), tangentPlus(Tangent()) {}
 
 	KeyFrame(int frameNumber, const std::vector<Key>& mKeys, int component, std::string& id)
 	{
@@ -165,7 +169,10 @@ public:
 	}
 	~CurveSegment() {}
 
-	double evaluateBezierGivenTangents(int frameNumber, vec3& tangentPlus, vec3& tangentMinus) const;
+	double evaluateBezierGivenTangents(int frameNumber, const vec3& tangentPlus, const vec3& tangentMinus) const;
+	// method based on stackoverflow post: 
+	// https://stackoverflow.com/questions/51879836/cubic-bezier-curves-get-y-for-given-x-special-case-where-x-of-control-points
+	double getTGivenX(double x, double pa, double pb, double pc, double pd) const;
 	double dCdT(int frameNumber, int component, int index) const;
 };
 
@@ -196,11 +203,11 @@ public:
 	{
 		for (int i = 0; i < 3; i++)
 		{
-
-			std::string key = ASolver::getKey(TRANSLATION, i, frameNumber);
+			int curveFrameNumber = (frameNumber / FPS) * FPS;
+			std::string key = ASolver::getKey(TRANSLATION, i, curveFrameNumber);
 			if (solver.curveSegments.find(key) == solver.curveSegments.end())
 			{
-				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, (frameNumber / FPS) * FPS, mKeys, solver) });
+				solver.curveSegments.insert({key, std::make_unique<CurveSegment>(i, curveFrameNumber, mKeys, solver) });
 			}
 			// set curve segment for my mActiveState
 			this->orderedAffectedCurveSegments.push_back(solver.curveSegments[key].get());
