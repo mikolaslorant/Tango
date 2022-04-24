@@ -42,18 +42,37 @@ global proc getAnimCurves() {
 				print("\nstartTime:");
 				print $keyLeft;
 				print("\nendTime:");
-				print $keyRight;				
+				print $keyRight;
+				
+				
+				float $inKeyTangent[] = `keyTangent -t $keyRight -q -inAngle $animCurve`;
+				print("\nIntangents:");
+				print($inKeyTangent);
+				
+				float $outTangent[] = `keyTangent -t $keyLeft -q -outAngle $animCurve`;
+				print("\nOuttangents:");
+				print($outTangent);
+				
+				//print("\nIntangentX:");
+				//print $IntangentX;
+				//print("\nIntangentY:");
+				//print $IntangentY;
+				//print("\nOuttangentX:");
+				//print $OuttangentX;
+				//print("\nOuttangentY:");
+				//print $OuttangentY;
+				
 			}
 		}
 		
 		int $i = 0;
-		for($i = $keyLeft; $i < $keyRight; $i = $i + 10) {
+		for($i = $keyLeft; $i <= $keyRight; $i = $i + 10) {
 			$editPoints = $editPoints + " -ep ";
 			for ($animCurve in $animCurves) {
 				string $query = `nodeType $animCurve`;
 					if (0 == (strcmp("animCurveTL", $query))) {
-					float $pos = `getAttr -time $i ($animCurve + ".o")`;
-					$editPoints = ($editPoints + " " + $pos);
+						float $pos = `getAttr -time $i ($animCurve + ".o")`;
+						$editPoints = ($editPoints + " " + $pos);
 				}
 			}
 		}
