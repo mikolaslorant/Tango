@@ -1,27 +1,76 @@
+global int $currentTime;
+global int $keyLeft;
+global int $keyRight;
+global float $inKeyTangent[];
+global float $outTangent[];
 
-global proc getAnimCurves() {
-	print("getAnimCurve is called");
+
+global proc createEditCurve() {
+	//print("createEditCurve is called");
     string $nodes[] = `ls -selection`;
 	string $cmd = "";
+	global int $currentTime;
+	global int $keyLeft;
+	global int $keyRight;
+	//print $currentTime;
+	//print $keyLeft;
+	//print $keyRight;
 	
+	string $editPoints = "";
 	for ($node in $nodes)
 	{
-		//From each transform node, obtain its shape node and print its name	
+		int $i = 0;
+		string $animCurves[] = `listConnections -type animCurve $node`;
+		for($i = $keyLeft; $i <= $keyRight; $i = $i + 10) {
+			if($keyLeft == 1 && $i == $keyLeft)
+			{
+				$i = $i - 1;
+			}
+			$editPoints = $editPoints + " -ep ";
+			for ($animCurve in $animCurves) {
+				string $query = `nodeType $animCurve`;
+					if (0 == (strcmp("animCurveTL", $query))) {
+						float $pos = `getAttr -time $i ($animCurve + ".o")`;
+						$editPoints = ($editPoints + " " + $pos);
+				}
+			}
+		}
+		if($editPoints != "") {
+			$cmd = ("curve " + $editPoints + ";") ;
+			//print($editPoints);
+		}
+	}
+	if(size($nodes) != 0) {
+		eval($cmd);
+	}
+	TangoCmd;
+}
+
+global proc getAnimCurves() {
+	//print("getAnimCurve is called");
+    string $nodes[] = `ls -selection`;
+	string $cmd = "";
+	global int $currentTime;
+	global int $keyLeft;
+	global int $keyRight;
+	global float $inKeyTangent[];
+	global float $outTangent[];
+
+	for ($node in $nodes)
+	{
 		$currentTime = `currentTime -query`;
 		print("\ncurrentTime:");
 		print $currentTime;
 		
-		string $shapes[] = `listRelatives -shapes $node`;
+		//string $shapes[] = `listRelatives -shapes $node`;
 		string $animCurves[] = `listConnections -type animCurve $node`;
 		string $editPoints = "";
-		
-		int $keyLeft;
-		int $keyRight;
 		
 		for ($animCurve in $animCurves) {
 			string $query = `nodeType $animCurve`;
 			
 			if (0 == (strcmp("animCurveTL", $query))) {
+				print($animCurve);
 				float $keyFrames[] = sort(`keyframe -q $animCurve`);
 				$keyLeft = int($keyFrames[0]);
 				$keyRight = int($keyFrames[size($keyFrames)-1]);
@@ -41,49 +90,22 @@ global proc getAnimCurves() {
 				
 				print("\nstartTime:");
 				print $keyLeft;
-				print("\nendTime:");
+				print("endTime:");
 				print $keyRight;
 				
-				
-				float $inKeyTangent[] = `keyTangent -t $keyRight -q -inAngle $animCurve`;
-				print("\nIntangents:");
-				print($inKeyTangent);
-				
-				float $outTangent[] = `keyTangent -t $keyLeft -q -outAngle $animCurve`;
-				print("\nOuttangents:");
+				$outTangent = `keyTangent -t $keyLeft -q -outAngle $animCurve`;
+				print("\nLeft Key Out tangents:");
 				print($outTangent);
 				
-				//print("\nIntangentX:");
-				//print $IntangentX;
-				//print("\nIntangentY:");
-				//print $IntangentY;
-				//print("\nOuttangentX:");
-				//print $OuttangentX;
-				//print("\nOuttangentY:");
-				//print $OuttangentY;
+				$inKeyTangent = `keyTangent -t $keyRight -q -inAngle $animCurve`;
+				print("Right Key In tangents:");
+				print($inKeyTangent);
 				
 			}
 		}
-		
-		int $i = 0;
-		for($i = $keyLeft; $i <= $keyRight; $i = $i + 10) {
-			$editPoints = $editPoints + " -ep ";
-			for ($animCurve in $animCurves) {
-				string $query = `nodeType $animCurve`;
-					if (0 == (strcmp("animCurveTL", $query))) {
-						float $pos = `getAttr -time $i ($animCurve + ".o")`;
-						$editPoints = ($editPoints + " " + $pos);
-				}
-			}
-		}
-		if($editPoints != "") {
-			$cmd = ("curve " + $editPoints + ";") ;
-		}
 	}
-	if(size($nodes) != 0) {
-		eval($cmd);
-	}
-	print("Tango is created by command");
+	//print("Tango is created by command");
+	createEditCurve();
 }
 
 // Create Tango Menu Items
@@ -100,6 +122,6 @@ if(`menuItem -exists tangoNodeMenu`) {
 	deleteUI tangoNodeMenu;
 }
 
-print("Calling getAnimCurve");
+//print("Calling getAnimCurve");
 menu -label "Tango Editor" -tearOff true tangoMenu;
 menuItem -label "Curve Control" -command "getAnimCurves()" tangoCmdMenu;
