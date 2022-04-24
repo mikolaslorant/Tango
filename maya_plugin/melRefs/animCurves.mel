@@ -1,0 +1,46 @@
+//https://forums.cgsociety.org/t/finding-stepped-keys/670062/6
+
+string $animObject = "pSphere1";
+string $timeRange = "1.0:1.0"; 
+float $key[] = `keyframe -at ty -q -timeChange $animCurve`;
+string $inTangentType[], $outTangentType[];
+string $orient;
+string $objectOrient = $animObject + "." + $orient;
+
+for ( $x = 1; $x < 4; $x++ )
+ {
+
+ if ($x == 1)
+ $orient = "translateX";
+ else if ($x == 2)
+  $orient = "translateY";
+  else if ($x == 3)
+   $orient = "translateZ";
+
+ if (`connectionInfo -isDestination $objectOrient`)
+ {
+  string $animCurve = `connectionInfo -sourceFromDestination $objectOrient`;
+  string $regularExpr = "\.output$";
+  $animCurve = `substitute $regularExpr $animCurve ""`;
+  string $query = `nodeType $animCurve`;
+
+  if (0 == (strcmp("animCurveTL", $query)))
+  {
+
+   if (`keyframe -t $timeRange -q -keyframeCount $objectOrient`)
+   {
+    $inTangentType = `keyTangent -t $timeRange -q -inTangentType $animCurve`;
+    $outTangentType = `keyTangent -q -outTangentType $animCurve`;
+
+ print ("
+" +$orient + "
+");
+ print $key;
+ print $outTangentType;
+
+ //  MEL to change keys to spline keys //
+     //keyTangent -t $timeRange -ott spline pSphere1_translateZ;
+   }
+  }
+ }
+}

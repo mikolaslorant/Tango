@@ -32,5 +32,6 @@
 *.app
 build/*
 debug/*
-*/Debug/*
-*/build/*
+*Debug/*
+*build/*
+*3rdparty/*
