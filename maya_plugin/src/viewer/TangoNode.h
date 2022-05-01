@@ -1,10 +1,13 @@
 #ifndef TANGONODE_H
 #define TANGONODE_H
+#include <aSolver.h>
 #include <maya/MPxNode.h>
 #include <maya/MStatus.h>
 #include <maya/MFnPlugin.h>
 #include <maya/MTime.h>
 #include <maya/MFnMesh.h>
+#include <maya/MFnTransform.h>
+#include <maya/MGlobal.h>
 #include <maya/MPoint.h>
 #include <maya/MFloatPoint.h>
 #include <maya/MFloatPointArray.h>
@@ -18,6 +21,12 @@
 #include <maya/MFnUnitAttribute.h>
 #include <maya/MFnTypedAttribute.h>
 #include <maya/MFnNumericAttribute.h>
+#include <maya/MDagPath.h>
+#include <maya/MFnDagNode.h>
+#include <maya/MSelectionList.h>
+#include <maya/MFnIkEffector.h>
+#include <maya/MFnAnimCurve.h>
+#include <maya/MItKeyframe.h>
 
 class TangoNode : public MPxNode
 {
@@ -29,7 +38,7 @@ public:
 	virtual MStatus compute(const MPlug& plug, MDataBlock& data);
 	
 	static MTypeId id;
-	static MObject time;
+	static MObject translate;
 	static MObject outputGeometry;
 };
 
