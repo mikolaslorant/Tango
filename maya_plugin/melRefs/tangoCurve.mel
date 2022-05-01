@@ -214,6 +214,9 @@ global proc generateEditCurve() {
 		print("drawingeditcurve");
 		drawEditCurve();
 	}
+	if(`objExists Tango1`) {
+		delete Tango1;
+	}
 	createTangoNode();
 	print("Created Tango Node");
 }
