@@ -68,26 +68,35 @@ void* TangoNode::creator()
 MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 {
 	MStatus returnStatus;
-
+	
 	//MDataHandle translate_handle = data.inputValue(translate, &returnStatus);
 	//MFloatVector translate_value = translate_handle.asFloatVector();
 	//std::cout << translate_value << std::endl;
 	
+
+	MFnMeshData mesh_data_creator;
+	MObject output_object = mesh_data_creator.create(&returnStatus);
+	MDataHandle output_handle = data.outputValue(outputGeometry, &returnStatus);
+	output_handle.set(output_object);
+	data.setClean(plug);
+
+
 	MDataHandle translate_handle = data.inputValue(translate, &returnStatus);
 	MFloatVector translate_value = translate_handle.asFloat3();
 	std::cout << translate_value << std::endl;
 	float temp = translate_value[1];
-	std::string tempStr = std::to_string(temp);
-	MGlobal::displayInfo("Implement Me!" + MString(tempStr.data()));
+	std::string translatevalstr = std::to_string(temp);
+	MGlobal::displayInfo("Implement Me!" + MString(translatevalstr.data()));
 	// Create Target State
 	MDagPath nodePath;
 	MObject component;
 	MSelectionList locatorList;
 	MFnDagNode nodeFn;
 	MGlobal::getActiveSelectionList(locatorList);
-	if (locatorList.length() < 0)
+	if (locatorList.length() <= 0)
 	{
 		std::cout << "No selected locator" << std::endl;
+		return MS::kSuccess;
 	}
 	locatorList.getDagPath(0, nodePath);
 	MFnTransform transformFn(nodePath);
@@ -95,32 +104,55 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	char* underscore = "_";
 	MStringArray splittedString;
 	name.split(*underscore, splittedString);
-	MString frameNumberString = splittedString[2];
+	//MGlobal::displayInfo("SplittedString Length" + splittedString.length());
+	//unsigned int sptrLen = splittedString.length();
+	if (splittedString.length() == 0) {
+		std::cout << "No selected locator" << std::endl;
+		return MS::kSuccess;
+	}
+	MString effectorName = "";
+	for (int i = 1; i < splittedString.length() - 1; i++) {
+		if (i != 1) {
+			effectorName += "_";
+		}
+		effectorName += splittedString[i];
+	}
+
+	MString frameNumberString = splittedString[splittedString.length() - 1];
+	MGlobal::displayInfo("Target State set");
 
 	// Set target translation and framenumber
 	MVector targetPos = transformFn.getTranslation(MSpace::kWorld);
 	State targetState;
 	targetState.point = vec3(targetPos[0], targetPos[1], targetPos[2]);
 	targetState.frameNumber = frameNumberString.asInt();
+	MGlobal::displayInfo("Target translation Frame number set");
 
 	// Get Effector
 	MSelectionList effectorList;
 	
 	MDagPath effectorPath;
-	MString effectorName = splittedString[1];
+	//MString effectorName = splittedString[1];
+	MGlobal::displayInfo("effectorName: " + effectorName);
 	effectorList.add(effectorName);
 	if (effectorList.length() < 0)
 	{
 		std::cout << "No selected effector" << std::endl;
 	}
 	effectorList.getDagPath(0, effectorPath);
-	MFnIkEffector effector(effectorPath);
+	MFnTransform effector(effectorPath);
 	MPlugArray connections;
 	effector.getConnections(connections);
 	MString curves[] = { "translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"};
+	MGlobal::displayInfo("effector.Name(): " + effector.name());
+
+
 	for (auto& curveName : curves)
 	{
 		// find connection with that curve name
+		MGlobal::displayInfo("CurveName: " + curveName);
+		MGlobal::displayInfo("Connections Length: " + connections.length());
+		MGlobal::displayInfo("\n");
 		int i = 0;
 		for (; i < connections.length(); i++)
 		{
@@ -134,6 +166,7 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		if (i == connections.length())
 		{
 			std::cout << "Connection with anim curve not found." << std::endl;
+			break;
  		}
 		MFnAnimCurve animCurve(connections[i].node());
 		// Get left and right key frame
@@ -151,23 +184,8 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		std::cout << "left and right keyframe numbers: " << leftKeyFrameNumber << " " << rightKeyFrameNumber << std::endl;
 
 
-
+		
 	}
-	
-
-
-
-
-
-
-
-	MFnMeshData mesh_data_creator;
-	MObject output_object = mesh_data_creator.create(&returnStatus);
-	
-	MDataHandle output_handle = data.outputValue(outputGeometry, &returnStatus);
-	output_handle.set(output_object);
-
-	data.setClean(plug);
 	
 	return MS::kSuccess;
 }

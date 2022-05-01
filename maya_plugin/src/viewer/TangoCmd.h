@@ -10,6 +10,7 @@
 class TangoCmd : public MPxCommand
 {
 public:
+    //TangoNode t;
     TangoCmd();
     virtual ~TangoCmd();
     static void* creator() { return new TangoCmd(); }

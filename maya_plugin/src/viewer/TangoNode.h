@@ -27,6 +27,7 @@
 #include <maya/MFnIkEffector.h>
 #include <maya/MFnAnimCurve.h>
 #include <maya/MItKeyframe.h>
+#include <maya/MFnHikEffector.h>
 
 class TangoNode : public MPxNode
 {
