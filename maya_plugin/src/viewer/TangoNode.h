@@ -41,7 +41,8 @@ public:
 	virtual MStatus compute(const MPlug& plug, MDataBlock& data);
 	
 	static MTypeId id;
-	static MObject translate;
+	//static MObject translate[10];
+	static MObject translate0, translate1, translate2, translate3, translate4, translate5, translate6, translate7, translate8, translate9;
 	static MObject outputGeometry;
 
 private:
