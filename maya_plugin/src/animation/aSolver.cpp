@@ -655,7 +655,7 @@ double CurveSegment::getTGivenX(double x, double pa, double pb, double pc, doubl
 	int size = 0;
 	std::vector<double> roots;
 	findRoots(roots, x, pa - x, pb - x, pc - x, pd - x);
-	double t;
+	double t = 0;
 	if (roots.size() > 0) {
 		for (double _t : roots) {
 			if (_t < 0 || _t > 1) continue;

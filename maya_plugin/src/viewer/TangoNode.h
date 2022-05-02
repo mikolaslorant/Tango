@@ -29,6 +29,8 @@
 #include <maya/MItKeyframe.h>
 #include <maya/MFnHikEffector.h>
 
+
+
 class TangoNode : public MPxNode
 {
 public:
@@ -41,6 +43,19 @@ public:
 	static MTypeId id;
 	static MObject translate;
 	static MObject outputGeometry;
+
+private:
+
+	const enum keyData { KIDX, KNUM, KVAL };
+	const static MString curves[];
+	const static int componentsOfCurves[];
+	const static CurveType typesOfCurves[];
+
+	ASolver mSolver;
+	State mTargetState;
+	MStatus splitTransformName(MString name, MString &effectorName, int &frameNumber);
+	MStatus getTargetParams(MString &effectorName, vec3& targetPoint, int &frameNumber);
+	void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, vec3 &leftKey, vec3 &rightKey);
 };
 
 #endif
