@@ -197,11 +197,12 @@ global proc createTangoNode() {
 	string $locators[] = `listRelatives -children tangoLocators`;
 	//print($locators);
 	int $i = 0;
-	// for ($locator in $locators) {
-		print($locators[0]);
-		print(`getAttr ($locators[0] + ".t")`);
-		connectAttr ($locators[0] + ".t") TangoNode1.translate;
-	// }
+	for ($locator in $locators) {
+		print($locator);
+		print(`getAttr ($locator + ".t")`);
+		connectAttr ($locator + ".t") ("TangoNode1" + ".translate" + $i);
+		$i = $i + 1;
+	}		
 	print("Tango Black Box is getting created");
 }
 
@@ -217,7 +218,12 @@ global proc generateEditCurve() {
 	if(`objExists Tango1`) {
 		delete Tango1;
 	}
-	createTangoNode();
+	if(!`objExists TangoNode1`) {
+		createTangoNode();
+	}
+	else {
+
+	}
 	print("Created Tango Node");
 }
 
