@@ -66,11 +66,11 @@ ASplineVec3::InterpolationType ASplineVec3::getInterpolationType() const
 
 void ASplineVec3::editStatePoint(int frameNumber, const vec3& value)
 {
-	assert(frameNumber >= 0);
+	/*assert(frameNumber >= 0);
 	State state(frameNumber, value, false, mKeys, *mSolver);
 	mSolver->solve(state, mKeys.size());
 	computeControlPoints();
-	cacheCurve();
+	cacheCurve();*/
 }
 
 
@@ -157,10 +157,10 @@ void ASplineVec3::appendKey(const vec3& value, bool updateCurve)
 void ASplineVec3::appendPin(int frameNumber, const vec3& value)
 {
 	assert(frameNumber >= 0);
-	if (mSolver->pins.find(frameNumber) == mSolver->pins.end())
+	/*if (mSolver->pins.find(frameNumber) == mSolver->pins.end())
 	{
 		mSolver->pins.insert({ frameNumber, std::make_unique<State>(frameNumber, value, true, mKeys, *mSolver) });
-	}
+	}*/
 }
 
 void ASplineVec3::deleteKey(int keyID)

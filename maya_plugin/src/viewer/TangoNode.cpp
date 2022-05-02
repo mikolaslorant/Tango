@@ -67,26 +67,20 @@ void* TangoNode::creator()
 
 MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 {
+	// Enforce execution with mesh creation. In the future change to jobScript callback
 	MStatus returnStatus;
-	
-	//MDataHandle translate_handle = data.inputValue(translate, &returnStatus);
-	//MFloatVector translate_value = translate_handle.asFloatVector();
-	//std::cout << translate_value << std::endl;
-	
-
 	MFnMeshData mesh_data_creator;
 	MObject output_object = mesh_data_creator.create(&returnStatus);
 	MDataHandle output_handle = data.outputValue(outputGeometry, &returnStatus);
 	output_handle.set(output_object);
 	data.setClean(plug);
 
-
+	// Print locator position
 	MDataHandle translate_handle = data.inputValue(translate, &returnStatus);
 	MFloatVector translate_value = translate_handle.asFloat3();
-	std::cout << translate_value << std::endl;
-	float temp = translate_value[1];
-	std::string translatevalstr = std::to_string(temp);
-	MGlobal::displayInfo("Implement Me!" + MString(translatevalstr.data()));
+	std::string translateXYZ = std::to_string(translate_value[0]) + " " + std::to_string(translate_value[1]) + " " + std::to_string(translate_value[2]);
+	MGlobal::displayInfo("Locator Translation: " + MString(translateXYZ.data()));
+	
 	// Create Target State
 	MDagPath nodePath;
 	MObject component;
@@ -104,8 +98,6 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	char* underscore = "_";
 	MStringArray splittedString;
 	name.split(*underscore, splittedString);
-	//MGlobal::displayInfo("SplittedString Length" + splittedString.length());
-	//unsigned int sptrLen = splittedString.length();
 	if (splittedString.length() == 0) {
 		std::cout << "No selected locator" << std::endl;
 		return MS::kSuccess;
@@ -117,22 +109,22 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		}
 		effectorName += splittedString[i];
 	}
-
+	std::string stringEffectorName = effectorName.asChar();
 	MString frameNumberString = splittedString[splittedString.length() - 1];
 	MGlobal::displayInfo("Target State set");
 
+	// Declare Solver
+	ASolver solver;
+
 	// Set target translation and framenumber
 	MVector targetPos = transformFn.getTranslation(MSpace::kWorld);
-	State targetState;
-	targetState.point = vec3(targetPos[0], targetPos[1], targetPos[2]);
-	targetState.frameNumber = frameNumberString.asInt();
+	vec3 targetPoint = vec3(targetPos[0], targetPos[1], targetPos[2]);
+	State targetState(frameNumberString.asInt(), targetPoint, false);
 	MGlobal::displayInfo("Target translation Frame number set");
 
 	// Get Effector
 	MSelectionList effectorList;
-	
 	MDagPath effectorPath;
-	//MString effectorName = splittedString[1];
 	MGlobal::displayInfo("effectorName: " + effectorName);
 	effectorList.add(effectorName);
 	if (effectorList.length() < 0)
@@ -143,13 +135,17 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	MFnTransform effector(effectorPath);
 	MPlugArray connections;
 	effector.getConnections(connections);
+	int j = 0;
 	MString curves[] = { "translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ"};
+	int componentsOfCurves[] = { 0, 1, 2, 0, 1, 2 };
+	CurveType typesOfCurves[] = { TRANSLATION, TRANSLATION, TRANSLATION, ROTATION, ROTATION, ROTATION };
 	MGlobal::displayInfo("effector.Name(): " + effector.name());
-
-
+	
+	// Calculate affacted curve segments by state
+	int numberOfKeys;
 	for (auto& curveName : curves)
 	{
-		// find connection with that curve name
+		// Find connection with that curve name
 		MPlug animCurvePlug;
 		MGlobal::displayInfo("CurveName: " + curveName);
 		int len = connections.length();
@@ -165,37 +161,31 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 				continue;
 			}
 			animCurvePlug = inputPlugs[0];
-			std::string curveNameStr = curveName.asChar();
-			std::string plugApiType = animCurvePlug.node().apiTypeStr();
-			std::string plugName = animCurvePlug.name().asChar();
-			std::string effectorNameStr = effectorName.asChar();
-			bool cond1 = (MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToDistance"));
-			bool cond2 = (MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToAngular"));
-			bool cond3 = (animCurvePlug.name() == effectorName + "_" + curveName + ".output");
-			if ((cond1 || cond2) && cond3)
+			if ((MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToDistance") || 
+				MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToAngular")) 
+				&& animCurvePlug.name() == effectorName + "_" + curveName + ".output")
 			{
 				break;
 			}
 		}
-		/*if (i == connections.length())
-		{
-			std::cout << "Connection with anim curve not found." << std::endl;
-			break;
- 		}*/
 		MFnAnimCurve animCurve(animCurvePlug.node());
+		
 		// Get left and right key frame
 		MItKeyframe keyFrameIterator(animCurvePlug.node());
 		int leftKeyFrameNumber = -1;
 		int rightKeyFrameNumber = -1;
+		double leftKeyFrameValue;
+		double rightKeyFrameValue;
 		int leftKeyIndex = -1;
 		while (keyFrameIterator.time().value() < targetState.frameNumber)
 		{
 			leftKeyIndex++;
 			leftKeyFrameNumber = keyFrameIterator.time().value();
+			leftKeyFrameValue = keyFrameIterator.value();
 			keyFrameIterator.next();
 		}
 		rightKeyFrameNumber = keyFrameIterator.time().value();
-		std::cout << "left and right keyframe numbers: " << leftKeyFrameNumber << " " << rightKeyFrameNumber << std::endl;
+		rightKeyFrameValue = keyFrameIterator.value();
 
 		MAngle leftIn, leftOut, rightIn, rightOut;
 		double wtLeftIn, wtLeftOut, wtRightIn, wtRightOut;
@@ -204,19 +194,36 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		animCurve.getTangent(leftKeyIndex + 1, rightIn, wtRightIn, true);
 		animCurve.getTangent(leftKeyIndex + 1, rightOut, wtRightOut, true);
 
-		double leftInX = cos(leftIn.asRadians());
-		double leftInY = sin(leftIn.asRadians());
-		double leftOutX = cos(leftOut.asRadians());
-		double leftOutY = sin(leftOut.asRadians());
-
-		double rightInX = cos(rightIn.asRadians());
-		double rightInY = sin(rightIn.asRadians());
-		double rightOutX = cos(rightOut.asRadians());
-		double rightOutY = sin(rightOut.asRadians());
-
-
-
+		// Insert values into solver
+		CurveType type = typesOfCurves[j];
+		int component = componentsOfCurves[j];
+		Tangent leftTangentIn(cos(leftIn.asRadians()), sin(leftIn.asRadians()));
+		Tangent leftTangentOut(cos(leftOut.asRadians()), sin(leftOut.asRadians()));
+		Tangent rightTangentIn(cos(rightIn.asRadians()), sin(rightIn.asRadians()));
+		Tangent rightTangentOut(cos(rightOut.asRadians()), sin(rightOut.asRadians()));
+		std::string idLeft = ASolver::getKey(type, component, leftKeyFrameNumber);
+		std::string idRight = ASolver::getKey(type, component, rightKeyFrameNumber);
+		if (solver.keyFrames.find(idLeft) == solver.keyFrames.end())
+		{
+			solver.keyFrames.insert({ idLeft, std::make_unique<KeyFrame>(idLeft, leftKeyFrameValue, leftKeyFrameNumber,
+																		leftKeyIndex, leftTangentIn, leftTangentOut) });
+		}
+		if (solver.keyFrames.find(idRight) == solver.keyFrames.end())
+		{
+			solver.keyFrames.insert({ idRight, std::make_unique<KeyFrame>(idRight, rightKeyFrameValue, rightKeyFrameNumber,
+																		leftKeyIndex + 1, rightTangentIn, rightTangentOut) });
+		}
+		if (solver.curveSegments.find(idLeft) == solver.curveSegments.end())
+		{
+			solver.curveSegments.insert({ idLeft, std::make_unique<CurveSegment>(idLeft, type, component, stringEffectorName,
+																					solver.keyFrames[idLeft].get(), solver.keyFrames[idRight].get()) });
+		}
+		targetState.orderedAffectedCurveSegments.push_back(solver.curveSegments[idLeft].get());
+		numberOfKeys = animCurve.numKeys();
+		j++;
 	}
+	solver.solve(targetState, numberOfKeys);
+
 	
 	return MS::kSuccess;
 }
