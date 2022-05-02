@@ -150,29 +150,43 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	for (auto& curveName : curves)
 	{
 		// find connection with that curve name
+		MPlug animCurvePlug;
 		MGlobal::displayInfo("CurveName: " + curveName);
+		int len = connections.length();
 		MGlobal::displayInfo("Connections Length: " + connections.length());
 		MGlobal::displayInfo("\n");
 		int i = 0;
 		for (; i < connections.length(); i++)
 		{
-			if ((connections[i].node().apiTypeStr() == "animCurveTL" ||
-				connections[i].node().apiTypeStr() == "animCurveTA") &&
-				connections[i].name() == curveName)
+			MPlugArray inputPlugs;
+			connections[i].connectedTo(inputPlugs, true, false);
+			if (inputPlugs.length() < 1)
+			{
+				continue;
+			}
+			animCurvePlug = inputPlugs[0];
+			std::string curveNameStr = curveName.asChar();
+			std::string plugApiType = animCurvePlug.node().apiTypeStr();
+			std::string plugName = animCurvePlug.name().asChar();
+			std::string effectorNameStr = effectorName.asChar();
+			bool cond1 = (MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToDistance"));
+			bool cond2 = (MString(animCurvePlug.node().apiTypeStr()) == MString("kAnimCurveTimeToAngular"));
+			bool cond3 = (animCurvePlug.name() == effectorName + "_" + curveName + ".output");
+			if ((cond1 || cond2) && cond3)
 			{
 				break;
 			}
 		}
-		if (i == connections.length())
+		/*if (i == connections.length())
 		{
 			std::cout << "Connection with anim curve not found." << std::endl;
 			break;
- 		}
-		MFnAnimCurve animCurve(connections[i].node());
+ 		}*/
+		MFnAnimCurve animCurve(animCurvePlug.node());
 		// Get left and right key frame
-		MItKeyframe keyFrameIterator(connections[i].node());
-		int leftKeyFrameNumber;
-		int rightKeyFrameNumber;
+		MItKeyframe keyFrameIterator(animCurvePlug.node());
+		int leftKeyFrameNumber = -1;
+		int rightKeyFrameNumber = -1;
 		int leftKeyIndex = -1;
 		while (keyFrameIterator.time().value() < targetState.frameNumber)
 		{
@@ -183,8 +197,25 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		rightKeyFrameNumber = keyFrameIterator.time().value();
 		std::cout << "left and right keyframe numbers: " << leftKeyFrameNumber << " " << rightKeyFrameNumber << std::endl;
 
+		MAngle leftIn, leftOut, rightIn, rightOut;
+		double wtLeftIn, wtLeftOut, wtRightIn, wtRightOut;
+		animCurve.getTangent(leftKeyIndex, leftIn, wtLeftIn, true);
+		animCurve.getTangent(leftKeyIndex, leftOut, wtLeftOut, true);
+		animCurve.getTangent(leftKeyIndex + 1, rightIn, wtRightIn, true);
+		animCurve.getTangent(leftKeyIndex + 1, rightOut, wtRightOut, true);
 
-		
+		double leftInX = cos(leftIn.asRadians());
+		double leftInY = sin(leftIn.asRadians());
+		double leftOutX = cos(leftOut.asRadians());
+		double leftOutY = sin(leftOut.asRadians());
+
+		double rightInX = cos(rightIn.asRadians());
+		double rightInY = sin(rightIn.asRadians());
+		double rightOutX = cos(rightOut.asRadians());
+		double rightOutY = sin(rightOut.asRadians());
+
+
+
 	}
 	
 	return MS::kSuccess;
