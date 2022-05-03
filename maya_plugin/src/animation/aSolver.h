@@ -48,7 +48,7 @@ public:
 	ASolver();
 	~ASolver();
 
-	void solve(State& newState, int totalNumberOfKeys);
+	void solve(State& newState, std::vector<CurveSegment*>& C, int totalNumberOfKeys);
 	void calculateCurveSegmentsThatNeedOptimizing(const State& newState, std::unordered_set<State*>& ro, std::vector<CurveSegment*>& C) const;
 	void calculateSolverInputs(const State& newState, const std::unordered_set<State*>& ro, const std::vector<CurveSegment*>& C,
 		int totalNumberOfKeys,
@@ -134,11 +134,15 @@ public:
 	KeyFrame* keyLeft;
 	// frame corresponding to right Key
 	KeyFrame* keyRight;
+	// reference to maya MFnAnimCurve
+	std::string mfnAnimCurveName;
 
 	CurveSegment() : type(TRANSLATION), id(0), joint("test"), keyLeft(nullptr), keyRight(nullptr) {}
 
-	CurveSegment(std::string& id, CurveType type, int component, std::string& joint, KeyFrame *leftKey, KeyFrame *rightKey) :
-		id(id), type(type), component(component), joint(joint), keyLeft(leftKey), keyRight(rightKey)
+	CurveSegment(std::string& id, CurveType type, int component, std::string& joint, 
+					KeyFrame *leftKey, KeyFrame *rightKey, std::string& mfnAnimCurveName) :
+		id(id), type(type), component(component), joint(joint), keyLeft(leftKey), keyRight(rightKey),
+		mfnAnimCurveName(mfnAnimCurveName)
 	{}
 	~CurveSegment() {}
 

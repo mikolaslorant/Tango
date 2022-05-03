@@ -212,12 +212,6 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	output_handle.set(output_object);
 	data.setClean(plug);
 
-	// Print locator position
-	//MDataHandle translate_handle = data.inputValue(translate, &returnStatus);
-	//MFloatVector translate_value = translate_handle.asFloat3();
-	//std::string translateXYZ = std::to_string(translate_value[0]) + " " + std::to_string(translate_value[1]) + " " + std::to_string(translate_value[2]);
-	//MGlobal::displayInfo("Locator Translation: " + MString(translateXYZ.data()));
-	
 	// Create Target State
 	MString effectorName = "";
 	int frameNumber = -1;
@@ -252,10 +246,7 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	{
 		// Find connection with that curve name
 		MPlug animCurvePlug;
-		MGlobal::displayInfo("CurveName: " + curveName);
 		int len = connections.length();
-		MGlobal::displayInfo("Connections Length: " + connections.length());
-		MGlobal::displayInfo("\n");
 		int i = 0;
 		for (; i < connections.length(); i++)
 		{
@@ -274,7 +265,7 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 			}
 		}
 		MFnAnimCurve animCurve(animCurvePlug.node());
-		
+		std::string animCurveName = animCurve.name().asChar();
 		// Get left and right Keyframes and Tangents
 		vec3 leftKey;
 		vec3 rightKey;
@@ -309,17 +300,41 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		if (mSolver.curveSegments.find(idLeft) == mSolver.curveSegments.end())
 		{
 			mSolver.curveSegments.insert({ idLeft, std::make_unique<CurveSegment>(idLeft, type, component, effectorNameStr,
-																					mSolver.keyFrames[idLeft].get(), mSolver.keyFrames[idRight].get()) });
+																					mSolver.keyFrames[idLeft].get(), mSolver.keyFrames[idRight].get(), 
+																						animCurveName) });
 		}
 		targetState.orderedAffectedCurveSegments.push_back(mSolver.curveSegments[idLeft].get());
 		numberOfKeys = animCurve.numKeys();
 		j++;
 	}
-	mSolver.solve(targetState, numberOfKeys);
+	std::vector<CurveSegment*> C;
+	mSolver.solve(targetState, C, numberOfKeys);
 	MGlobal::displayInfo("Solver called");
-
+	for (const auto& curveSegment : C)
+	{
+		MDagPath curveSegmentPath;
+		MSelectionList curveFinderList;
+		curveFinderList.add(MString(curveSegment->mfnAnimCurveName.c_str()));
+		if (curveFinderList.length() < 0)
+		{
+			std::cout << "Curve not found" << std::endl;
+			return MS::kSuccess;
+		}
+		curveFinderList.getDagPath(0, curveSegmentPath);
+		MObject objectCurve = curveSegmentPath.node();
+		MFnAnimCurve animCurve(objectCurve);
+		animCurve.setTangent(curveSegment->keyLeft->keyFrameNumber,
+			curveSegment->keyLeft->tangentPlus.x,
+			curveSegment->keyLeft->tangentPlus.y,
+			false);
+		animCurve.setTangent(curveSegment->keyRight->keyFrameNumber,
+			curveSegment->keyRight->tangentMinus.x,
+			curveSegment->keyRight->tangentMinus.y,
+			false);
+	}
+	MGlobal::displayInfo("Tangents updated.");
 	
-	
+	MGlobal::executeCommand("generateEditCurveTest();");
 	return MS::kSuccess;
 }
 

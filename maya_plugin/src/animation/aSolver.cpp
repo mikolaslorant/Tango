@@ -26,10 +26,9 @@ double ASolver::psi(double vi, const KeyFrame& currentKeyFrame, const KeyFrame& 
 	return (4.0 / 3.0) * (vi - std::max(currentKeyFrame.value, otherKeyFrame.value));
 }
 
-void ASolver::solve(State& newState, int totalNumberOfKeys)
+void ASolver::solve(State& newState, std::vector<CurveSegment*>& C, int totalNumberOfKeys)
 {
 	// Calculate ro vector and C vectors
-	std::vector<CurveSegment*> C;
 	std::unordered_set<State*> ro;
 	for (const auto& pin : pins)
 	{
