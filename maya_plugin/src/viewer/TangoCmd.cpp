@@ -1,6 +1,5 @@
 #include "TangoCmd.h"
 #include <maya/MGlobal.h>
-#include <list>
 
 const MTypeId TangoCmd::kNODE_ID(0x0);
 const MString TangoCmd::kCOMMAND_NAME = "TangoCmd";
@@ -36,7 +35,7 @@ MSyntax TangoCmd::newSyntax()
 {
     MSyntax syntax;
     syntax.addFlag(flagHelpShortName, flagHelpLongName);
-    syntax.addFlag(flagSelListShortName, flagSelListLongName, MSyntax::kSelectionItem);
+    syntax.addFlag(flagSelListShortName, flagSelListLongName, MSyntax::kString);
     syntax.enableQuery(false);
     syntax.enableEdit(false);
     syntax.useSelectionAsDefault(true);
@@ -61,7 +60,9 @@ MStatus TangoCmd::parseArgs(const MArgList& args)
     }
 
     if (argDb.isFlagSet(flagSelListShortName)) {
-        argDb.getFlagArgument(flagSelListShortName, 0, flagSelList);
+            MString param = argDb.flagArgumentString(flagSelListShortName, 0);
+            param.split(' ', flagSelList);
+
     }
 
     return result;
@@ -94,7 +95,7 @@ MStatus TangoCmd::doIt(const MArgList& args)
 MStatus TangoCmd::redoIt()
 {
     MStatus result;
-    if (flagSelList.length() != 1) {
+    if (flagSelList.length() < 1) {
         MGlobal::displayError("You need to select a single node to apply the callback to!");
         return MStatus::kInvalidParameter;
     }
@@ -114,9 +115,12 @@ MStatus TangoCmd::redoIt()
         false,
         &result);
     CHECK_MSTATUS_AND_RETURN_IT(result);
-
+    
     MObject transform;
-    result = flagSelList.getDependNode(0, transform);   // gets transform of first element of the selection list
+    MSelectionList selectionOfNodes;
+    selectionOfNodes.add(flagSelList[5]);
+    std::string firstTestNOde = flagSelList[5].asChar();
+    result = selectionOfNodes.getDependNode(0, transform);   // gets transform of first element of the selection list
     CHECK_MSTATUS_AND_RETURN_IT(result);
     if (!transform.hasFn(MFn::kDependencyNode)) {
         MGlobal::displayError("The object specified is not a valid DG node!");

@@ -11,6 +11,7 @@
 #include <maya/MDGModifier.h>
 #include <maya/MPlug.h>
 #include <maya/MFnMessageAttribute.h>
+#include <maya/MStringArray.h>
 #include <sstream>
 
 class TangoCmd : public MPxCommand
@@ -37,7 +38,7 @@ public:
 
     /// Storage for the flag arguments that will be passed into the command.
     bool flagHelpSpecified = false;
-    MSelectionList flagSelList;
+    MStringArray flagSelList;
 
     /// Storage for the operations that this command performs on the DG so that we
     /// can undo them if necessary.

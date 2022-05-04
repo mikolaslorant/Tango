@@ -362,102 +362,26 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	return MS::kSuccess;
 }
 
-//void featureCallback(MNodeMessage::AttributeMessage msg,
-//	MPlug& plug,
-//	MPlug& otherPlug,
-//	void* data)
-//{
-//	if (msg != (MNodeMessage::kAttributeSet | MNodeMessage::kIncomingDirection)) {
-//		return;
-//	}
-//	const char* plugName = plug.partialName(0, 0, 0, 0, 0, 1).asChar();
-//	if (strstr("translateX", plugName) == NULL) {
-//		return;
-//	}
-//	double xVal = plug.asDouble();
-//	MGlobal::displayInfo("Feature Callback successfully called");
-//}
 
 void featureCallback(MNodeMessage::AttributeMessage msg,
 	MPlug& plug,
 	MPlug& otherPlug,
 	void* data)
 {
-	if (msg == MNodeMessage::kConnectionMade)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kConnectionBroken)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeEval)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeSet)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeLocked)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeUnlocked)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeAdded)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeRemoved)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeRenamed)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeKeyable)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeUnkeyable)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kIncomingDirection)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeArrayAdded)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kAttributeArrayRemoved)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kOtherPlugSet)
-	{
-		return;
-	}
-	if (msg == MNodeMessage::kLast) {
-		return;
-	}
-	int msgVal = msg;
-	int expectedValAttrSet = MNodeMessage::kAttributeSet;
-	int expectedValDirection = MNodeMessage::kIncomingDirection;
-	int expectedVal = expectedValAttrSet | expectedValDirection;
 	if (msg != (MNodeMessage::kAttributeSet | MNodeMessage::kIncomingDirection)) {
 		return;
 	}
-	const char* plugName = plug.partialName(0, 0, 0, 0, 0, 1).asChar();
 	const char* fullplugName = plug.name().asChar();
 	if (strstr(fullplugName, "translateX") == NULL) {
 		return;
+	}/*
+	if (strstr(fullplugName, "translateY") == NULL) {
+		return;
 	}
+	if (strstr(fullplugName, "translateZ") == NULL) {
+		return;
+	}*/
+
 	MStatus status;
 	MPlug transformPlug = plug.parent(&status);
 	if (status != MStatus::kSuccess) {
@@ -477,6 +401,7 @@ void featureCallback(MNodeMessage::AttributeMessage msg,
 	}
 	double newYVal = sin(xVal);
 	double newZVal = cos(transformZPlug.asDouble() + xVal);
+	//transformXPlug.setDouble(xVal + 1);
 	transformYPlug.setDouble(newYVal);
 	transformZPlug.setDouble(newZVal);
 }
