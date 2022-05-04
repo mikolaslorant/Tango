@@ -16,10 +16,8 @@
 #define MAX_ITERS_TO_SOLVE 5
 #define REGULARIZATION_LAMBDA 0.000001
 #define TAU 6.28318530718
-#define FPS 120
+#define FPS 30
 
-
-#define FPS 120
 typedef std::pair<double, vec3> Key;
 
 class CurveSegment;
@@ -105,7 +103,7 @@ public:
 
 	KeyFrame() : t(0.0), frameNumber(0), tangentMinus(Tangent()), tangentPlus(Tangent()) {}
 
-	KeyFrame(std::string& id, double value, double t, int index, Tangent& tangentMinus, Tangent& tangentPlus)
+	KeyFrame(std::string& id, double value, double frameNumber, double t, int index, Tangent& tangentMinus, Tangent& tangentPlus)
 	{
 		
 		this->id = id;

@@ -47,7 +47,7 @@ public:
 
 private:
 
-	const enum keyData { KIDX, KNUM, KVAL };
+	const enum keyData { KIDX, KNUM, KTIME, KVAL};
 	const static MString curves[];
 	const static int componentsOfCurves[];
 	const static CurveType typesOfCurves[];
@@ -56,7 +56,7 @@ private:
 	State mTargetState;
 	MStatus splitTransformName(MString name, MString &effectorName, int &frameNumber);
 	MStatus getTargetParams(MString &effectorName, vec3& targetPoint, int &frameNumber);
-	void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, vec3 &leftKey, vec3 &rightKey);
+	void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, double (&leftKey) [4], double (&rightKey) [4]);
 };
 
 #endif
