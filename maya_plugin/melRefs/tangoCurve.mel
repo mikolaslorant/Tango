@@ -3,7 +3,6 @@ global int $keyLeft;
 global int $keyRight;
 global float $inKeyTangent[];
 global float $outTangent[];
-global string $locatorsGlobal[];
 global string $selectedNode;
 
 
@@ -14,7 +13,6 @@ global proc int drawEditCurve() {
 	global int $currentTime;
 	global int $keyLeft;
 	global int $keyRight;
-	global string $locatorsGlobal[];
 	
 	string $curvePoints = "";
 	string $locatorPoints = "";
@@ -40,7 +38,6 @@ global proc int drawEditCurve() {
 			setAttr ($locators[0] + ".r") $ori[0] $ori[1] $ori[2];
 
 			$locatorPoints = $locatorPoints + " " + $locators[0];
-			$locatorsGlobal[$locatorCnt] = $locators[0];
 			$locatorCnt = $locatorCnt + 1;
 		}
 		// setAttr `spaceLocator -n $locatorName`;
@@ -185,7 +182,7 @@ global proc createTangoNode() {
 	createNode transform -n Tango1;
 	createNode mesh -n TangoShape1 -p Tango1;
 	sets -add initialShadingGroup TangoShape1;
-	createNode TangoNode -n TangoNode1;
+	//createNode TangoNode -n TangoNode1;
 	connectAttr TangoNode1.outputMesh TangoShape1.inMesh;
 
 	print("Creating Tango Node");
@@ -210,7 +207,6 @@ global proc createTangoNode() {
 }
 
 global proc generateEditCurve() {
-	global string $locatorsGlobal[];
 	if(`objExists tangoCurve`) {
 		delete tangoCurve;
 	}
@@ -222,24 +218,19 @@ global proc generateEditCurve() {
 	if(`objExists Tango1`) {
 		delete Tango1;
 	}
-	createTangoNode();
+	if(!`objExists TangoNode1`) {
+		createTangoNode();
+	}
+	else {
+
+	}
 	print("Created Tango Node");
 }
 
 global proc generateEditCurveTest() {
-	if(`objExists tangoEditCurve`) {
-		delete tangoEditCurve;
-	}
-	print("calling getKeyFrames");
-	if(getKeyFrames()) {
-		print("drawingeditcurve");
-		drawEditCurve();
-	}
-	if(`objExists Tango1`) {
-		delete Tango1;
-	}
-	//createTangoNode();
-	print("Created Tango Node");
+	createNode "transform";
+	TangoCmd -n "transform1";
+	print("Created Test");
 }
 
 // Create Tango Menu Items
@@ -258,4 +249,4 @@ if(`menuItem -exists tangoNodeMenu`) {
 
 //print("Calling getAnimCurve");
 menu -label "Tango Editor" -tearOff true tangoMenu;
-menuItem -label "Curve Control" -command "generateEditCurve()" tangoCmdMenu;
+menuItem -label "Curve Control" -command "generateEditCurveTest()" tangoCmdMenu;
