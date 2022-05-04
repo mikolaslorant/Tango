@@ -201,17 +201,19 @@ MStatus TangoNode::getTargetParams(MString& effectorName, vec3& targetPoint, int
 	return MS::kSuccess;
 }
 
-void TangoNode::getKeyFrames(const int frameNumber, const MPlug animCurvePlug, vec3& leftKey, vec3& rightKey) {
+void TangoNode::getKeyFrames(const int frameNumber, const MPlug animCurvePlug, double(&leftKey)[4], double(&rightKey)[4]) {
 	MItKeyframe keyFrameIterator(animCurvePlug.node());
 	int leftKeyIndex = -1;
 	while (keyFrameIterator.time().value() < frameNumber)
 	{
 		leftKeyIndex++;
 		leftKey[KNUM] = keyFrameIterator.time().value();
+		leftKey[KTIME] = keyFrameIterator.time().asUnits(MTime::kSeconds);
 		leftKey[KVAL] = keyFrameIterator.value();
 		keyFrameIterator.next();
 	}
 	rightKey[KNUM] = keyFrameIterator.time().value();
+	rightKey[KTIME] = keyFrameIterator.time().asUnits(MTime::kSeconds);
 	rightKey[KVAL] = keyFrameIterator.value();
 	leftKey[KIDX] = leftKeyIndex;
 	rightKey[KIDX] = leftKeyIndex + 1;
@@ -280,36 +282,38 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 			}
 		}
 		MFnAnimCurve animCurve(animCurvePlug.node());
+
 		std::string animCurveName = animCurve.name().asChar();
 		// Get left and right Keyframes and Tangents
-		vec3 leftKey;
-		vec3 rightKey;
+		double leftKey[4];
+		double rightKey[4];
 		getKeyFrames(frameNumber, animCurvePlug, leftKey, rightKey);
-
-		MAngle leftIn, leftOut, rightIn, rightOut;
-		double wtLeftIn, wtLeftOut, wtRightIn, wtRightOut;
-		animCurve.getTangent(leftKey[KIDX], leftIn, wtLeftIn, true);
-		animCurve.getTangent(leftKey[KIDX], leftOut, wtLeftOut, true);
-		animCurve.getTangent(rightKey[KIDX], rightIn, wtRightIn, true);
-		animCurve.getTangent(rightKey[KIDX], rightOut, wtRightOut, true);
-
+		animCurve.setTangentsLocked(leftKey[KIDX], false);
+		animCurve.setTangentsLocked(rightKey[KIDX], false);
+		animCurve.setIsWeighted(true);
+		animCurve.setWeightsLocked(leftKey[KIDX], false);
+		animCurve.setWeightsLocked(rightKey[KIDX], false);
+		Tangent leftTangentIn;
+		Tangent leftTangentOut;
+		Tangent rightTangentIn;
+		Tangent rightTangentOut;
+		animCurve.getTangent(leftKey[KIDX], leftTangentIn.x, leftTangentIn.y, true);
+		animCurve.getTangent(leftKey[KIDX], leftTangentOut.x, leftTangentOut.y, false);
+		animCurve.getTangent(rightKey[KIDX], rightTangentIn.x, rightTangentIn.y, true);
+		animCurve.getTangent(rightKey[KIDX], rightTangentOut.x, rightTangentOut.y, false);
 		// Insert values into mSolver
 		CurveType type = typesOfCurves[j];
 		int component = componentsOfCurves[j];
-		Tangent leftTangentIn(cos(leftIn.asRadians()), sin(leftIn.asRadians()));
-		Tangent leftTangentOut(cos(leftOut.asRadians()), sin(leftOut.asRadians()));
-		Tangent rightTangentIn(cos(rightIn.asRadians()), sin(rightIn.asRadians()));
-		Tangent rightTangentOut(cos(rightOut.asRadians()), sin(rightOut.asRadians()));
 		std::string idLeft = ASolver::getKey(type, component, leftKey[KNUM]);
 		std::string idRight = ASolver::getKey(type, component, rightKey[KNUM]);
 		if (mSolver.keyFrames.find(idLeft) == mSolver.keyFrames.end())
 		{
-			mSolver.keyFrames.insert({ idLeft, std::make_unique<KeyFrame>(idLeft, leftKey[KVAL], leftKey[KNUM],
+			mSolver.keyFrames.insert({ idLeft, std::make_unique<KeyFrame>(idLeft, leftKey[KVAL], leftKey[KNUM], leftKey[KTIME],
 																		leftKey[KIDX], leftTangentIn, leftTangentOut) });
 		}
 		if (mSolver.keyFrames.find(idRight) == mSolver.keyFrames.end())
 		{
-			mSolver.keyFrames.insert({ idRight, std::make_unique<KeyFrame>(idRight, rightKey[KVAL], rightKey[KNUM],
+			mSolver.keyFrames.insert({ idRight, std::make_unique<KeyFrame>(idRight, rightKey[KVAL], rightKey[KNUM], rightKey[KTIME],
 																		rightKey[KIDX], rightTangentIn, rightTangentOut) });
 		}
 		if (mSolver.curveSegments.find(idLeft) == mSolver.curveSegments.end())
@@ -329,15 +333,20 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	{
 		MDagPath curveSegmentPath;
 		MSelectionList curveFinderList;
-		curveFinderList.add(MString(curveSegment->mfnAnimCurveName.c_str()));
+		MString testMSTRING(curveSegment->mfnAnimCurveName.c_str());
+		curveFinderList.add(MString(testMSTRING));
 		if (curveFinderList.length() < 0)
 		{
 			std::cout << "Curve not found" << std::endl;
 			return MS::kSuccess;
 		}
-		curveFinderList.getDagPath(0, curveSegmentPath);
-		MObject objectCurve = curveSegmentPath.node();
+		MObject objectCurve;
+		curveFinderList.getDependNode(0, objectCurve);
+		bool test = objectCurve.hasFn(MFn::kAnimCurve);
+		int num = curveFinderList.length();
+		std::string beforSTRingtest = objectCurve.apiTypeStr();
 		MFnAnimCurve animCurve(objectCurve);
+		std::string curveTestName = animCurve.name().asChar();
 		animCurve.setTangent(curveSegment->keyLeft->keyFrameNumber,
 			curveSegment->keyLeft->tangentPlus.x,
 			curveSegment->keyLeft->tangentPlus.y,
@@ -349,7 +358,7 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	}
 	MGlobal::displayInfo("Tangents updated.");
 	
-	MGlobal::executeCommand("generateEditCurveTest();");
+	//MGlobal::executeCommand("generateEditCurveTest();");
 	return MS::kSuccess;
 }
 
