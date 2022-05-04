@@ -4,10 +4,12 @@ global int $keyRight;
 global float $inKeyTangent[];
 global float $outTangent[];
 global string $selectedNode;
+global string $locatorsGlobal;
 
 
 global proc int drawEditCurve() {
 	//print("createEditCurve is called");
+	global string $locatorsGlobal;
 	global string $selectedNode;
 	string $cmd = "";
 	global int $currentTime;
@@ -36,7 +38,11 @@ global proc int drawEditCurve() {
 			string $locators[] = `spaceLocator -n $locatorName`;
 			setAttr ($locators[0] + ".t") $pos[0] $pos[1] $pos[2];
 			setAttr ($locators[0] + ".r") $ori[0] $ori[1] $ori[2];
-
+			if ($locatorCnt != 0)
+			{
+				$locatorsGlobal += " ";
+			}
+			$locatorsGlobal += $locators[0];
 			$locatorPoints = $locatorPoints + " " + $locators[0];
 			$locatorCnt = $locatorCnt + 1;
 		}
@@ -228,8 +234,20 @@ global proc generateEditCurve() {
 }
 
 global proc generateEditCurveTest() {
-	createNode "transform";
-	TangoCmd -n "transform1";
+	global string $locatorsGlobal;
+	if(`objExists tangoCurve`) {
+		delete tangoCurve;
+	}
+	print("calling getKeyFrames");
+	if(getKeyFrames()) {
+		print("drawingeditcurve");
+		drawEditCurve();
+	}
+	if(`objExists Tango1`) {
+		delete Tango1;
+	}
+	print("Created Tango Node");
+	TangoCmd -n $locatorsGlobal;
 	print("Created Test");
 }
 

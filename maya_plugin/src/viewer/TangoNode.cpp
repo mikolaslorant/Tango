@@ -151,27 +151,6 @@ void featureCallback(MNodeMessage::AttributeMessage msg,
 	MStatus status;
 	ASolver mSolver;
 	State mTargetState;
-	//MPlug transformPlug = plug.parent(&status);
-	//if (status != MStatus::kSuccess) {
-	//	return;
-	//}
-	//double xVal = plug.asDouble(&status);
-	//if (status != MStatus::kSuccess) {
-	//	return;
-	//}
-	//MPlug transformYPlug = transformPlug.child(1, &status);
-	//if (status != MStatus::kSuccess) {
-	//	return;
-	//}
-	//MPlug transformZPlug = transformPlug.child(2, &status);
-	//if (status != MStatus::kSuccess) {
-	//	return;
-	//}
-	//double newYVal = sin(xVal);
-	//double newZVal = cos(transformZPlug.asDouble() + xVal);
-	////transformXPlug.setDouble(xVal + 1);
-	//transformYPlug.setDouble(newYVal);
-	//transformZPlug.setDouble(newZVal);
 	// Create Target State
 	MString effectorName = "";
 	int frameNumber = -1;
