@@ -1,3 +1,4 @@
+#pragma once
 #ifndef TANGONODE_H
 #define TANGONODE_H
 #include <aSolver.h>
@@ -28,8 +29,21 @@
 #include <maya/MFnAnimCurve.h>
 #include <maya/MItKeyframe.h>
 #include <maya/MFnHikEffector.h>
+#include <maya/MFnMessageAttribute.h>
+#include <maya/MNodeMessage.h>
+#include <maya/MCallbackIdArray.h>
 
+void featureCallback(MNodeMessage::AttributeMessage msg,
+	MPlug& plug,
+	MPlug& otherPlug,
+	void* data);
 
+MStatus uninstallCallback();
+void uninstallCallback(MObject& node, void* data);
+void installCallback(MNodeMessage::AttributeMessage msg,
+	MPlug& plug,
+	MPlug& otherPlug,
+	void* data);
 
 class TangoNode : public MPxNode
 {
@@ -39,11 +53,24 @@ public:
 	static MStatus initialize();
 	static void* creator();
 	virtual MStatus compute(const MPlug& plug, MDataBlock& data);
+	void TangoNode::postConstructor();
+	//void installCallback(MNodeMessage::AttributeMessage msg,
+	//	MPlug& plug,
+	//	MPlug& otherPlug,
+	//	void* data);
+	//void uninstallCallback(MObject& node, void* data);
+	//MStatus uninstallCallback();
 	
-	static MTypeId id;
+	static const MTypeId kNODE_ID;
+	static const MString kNODE_NAME;
+	static const char* kIN_TRANSFORM_ATTR_NAME;
+	static const char* kMSG_CXN_ATTR_NAME;
 	//static MObject translate[10];
 	static MObject translate0, translate1, translate2, translate3, translate4, translate5, translate6, translate7, translate8, translate9;
 	static MObject outputGeometry;
+	static MObject TangoNode::inTransformAttr;
+
+	static MCallbackIdArray callbacks;
 
 private:
 

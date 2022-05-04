@@ -3,7 +3,10 @@
 
 #include "TangoNode.h"
 
-MTypeId TangoNode::id(0x0);
+const MTypeId TangoNode::kNODE_ID(0x0);
+const MString TangoNode::kNODE_NAME = "TangoNode";
+const char* TangoNode::kIN_TRANSFORM_ATTR_NAME = "inTransform";
+const char* TangoNode::kMSG_CXN_ATTR_NAME = "locatorCallBackAttr";
 //MObject TangoNode::translate[] = {};
 MObject TangoNode::translate0;
 MObject TangoNode::translate1;
@@ -16,7 +19,9 @@ MObject TangoNode::translate7;
 MObject TangoNode::translate8;
 MObject TangoNode::translate9;
 MObject TangoNode::outputGeometry;
+MObject TangoNode::inTransformAttr;
 
+MCallbackIdArray TangoNode::callbacks;
 const MString TangoNode::curves[] = { "translateX", "translateY", "translateZ", "rotateX", "rotateY", "rotateZ" };
 const int TangoNode::componentsOfCurves[] = { 0, 1, 2, 0, 1, 2 };
 const CurveType TangoNode::typesOfCurves[] = { TRANSLATION, TRANSLATION, TRANSLATION, ROTATION, ROTATION, ROTATION };
@@ -49,93 +54,103 @@ MStatus TangoNode::initialize()
 
 	MStatus returnStatus;
 
+	MFnMessageAttribute fnMsgAttr;
+	TangoNode::inTransformAttr = fnMsgAttr.create(TangoNode::kIN_TRANSFORM_ATTR_NAME,
+												  TangoNode::kIN_TRANSFORM_ATTR_NAME,
+												  &returnStatus);
+	CHECK_MSTATUS_AND_RETURN_IT(returnStatus);
+	addAttribute(TangoNode::inTransformAttr);
+
+
+
+
 	//TangoNode::translate = translateAttr.create("translate", "tr", MFnNumericData::kFloat, 0.0, &returnStatus);
 	//translateAttr.setArray(true);
 	//translateAttr.setUsesArrayDataBuilder(true);
-	TangoNode::outputGeometry = outputGeomAttr.create("outputMesh", "out", MFnData::kMesh, &returnStatus);
-	McheckErr(returnStatus, "ERROR creating TangoNode output attribute\n");
-	returnStatus = addAttribute(TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR adding outputMesh attribute\n");
+	//TangoNode::outputGeometry = outputGeomAttr.create("outputMesh", "out", MFnData::kMesh, &returnStatus);
+	//McheckErr(returnStatus, "ERROR creating TangoNode output attribute\n");
+	//returnStatus = addAttribute(TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR adding outputMesh attribute\n");
 
-	TangoNode::translate0 = translateAttr.create("translate0", "tr0", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate0);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate0, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate0 = translateAttr.create("translate0", "tr0", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate0);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate0, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate1 = translateAttr.create("translate1", "tr1", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate1);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate1, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate1 = translateAttr.create("translate1", "tr1", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate1);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate1, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate2 = translateAttr.create("translate2", "tr2", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate2);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate2, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate2 = translateAttr.create("translate2", "tr2", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate2);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate2, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate3 = translateAttr.create("translate3", "tr3", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate3);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate3, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate3 = translateAttr.create("translate3", "tr3", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate3);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate3, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate4 = translateAttr.create("translate4", "tr4", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate4);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate4, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate4 = translateAttr.create("translate4", "tr4", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate4);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate4, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate5 = translateAttr.create("translate5", "tr5", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate5);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate5, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate5 = translateAttr.create("translate5", "tr5", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate5);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate5, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate6 = translateAttr.create("translate6", "tr6", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate6);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate6, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate6 = translateAttr.create("translate6", "tr6", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate6);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate6, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate7 = translateAttr.create("translate7", "tr7", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate7);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate7, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate7 = translateAttr.create("translate7", "tr7", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate7);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate7, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate8 = translateAttr.create("translate8", "tr8", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate8);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate8, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate8 = translateAttr.create("translate8", "tr8", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate8);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate8, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
-	TangoNode::translate9 = translateAttr.create("translate9", "tr9", MFnNumericData::k3Float, 0.0, &returnStatus);
-	MAKE_INPUT(translateAttr);
-	McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
-	returnStatus = addAttribute(TangoNode::translate9);
-	McheckErr(returnStatus, "ERROR adding translate attribute\n");
-	returnStatus = attributeAffects(TangoNode::translate9, TangoNode::outputGeometry);
-	McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
+	//TangoNode::translate9 = translateAttr.create("translate9", "tr9", MFnNumericData::k3Float, 0.0, &returnStatus);
+	//MAKE_INPUT(translateAttr);
+	//McheckErr(returnStatus, "ERROR creating TangoNode time attribute\n");
+	//returnStatus = addAttribute(TangoNode::translate9);
+	//McheckErr(returnStatus, "ERROR adding translate attribute\n");
+	//returnStatus = attributeAffects(TangoNode::translate9, TangoNode::outputGeometry);
+	//McheckErr(returnStatus, "ERROR in time attributeAffects outputMesh\n");
 
 	return MS::kSuccess;
 }
@@ -330,7 +345,7 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 		animCurve.setTangent(curveSegment->keyRight->keyFrameNumber,
 			curveSegment->keyRight->tangentMinus.x,
 			curveSegment->keyRight->tangentMinus.y,
-			false);
+			true);
 	}
 	MGlobal::displayInfo("Tangents updated.");
 	
@@ -338,3 +353,205 @@ MStatus TangoNode::compute(const MPlug& plug, MDataBlock& data)
 	return MS::kSuccess;
 }
 
+//void featureCallback(MNodeMessage::AttributeMessage msg,
+//	MPlug& plug,
+//	MPlug& otherPlug,
+//	void* data)
+//{
+//	if (msg != (MNodeMessage::kAttributeSet | MNodeMessage::kIncomingDirection)) {
+//		return;
+//	}
+//	const char* plugName = plug.partialName(0, 0, 0, 0, 0, 1).asChar();
+//	if (strstr("translateX", plugName) == NULL) {
+//		return;
+//	}
+//	double xVal = plug.asDouble();
+//	MGlobal::displayInfo("Feature Callback successfully called");
+//}
+
+void featureCallback(MNodeMessage::AttributeMessage msg,
+	MPlug& plug,
+	MPlug& otherPlug,
+	void* data)
+{
+	if (msg == MNodeMessage::kConnectionMade)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kConnectionBroken)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeEval)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeSet)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeLocked)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeUnlocked)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeAdded)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeRemoved)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeRenamed)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeKeyable)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeUnkeyable)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kIncomingDirection)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeArrayAdded)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kAttributeArrayRemoved)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kOtherPlugSet)
+	{
+		return;
+	}
+	if (msg == MNodeMessage::kLast) {
+		return;
+	}
+	int msgVal = msg;
+	int expectedValAttrSet = MNodeMessage::kAttributeSet;
+	int expectedValDirection = MNodeMessage::kIncomingDirection;
+	int expectedVal = expectedValAttrSet | expectedValDirection;
+	if (msg != (MNodeMessage::kAttributeSet | MNodeMessage::kIncomingDirection)) {
+		return;
+	}
+	const char* plugName = plug.partialName(0, 0, 0, 0, 0, 1).asChar();
+	const char* fullplugName = plug.name().asChar();
+	if (strstr(fullplugName, "translateX") == NULL) {
+		return;
+	}
+	MStatus status;
+	MPlug transformPlug = plug.parent(&status);
+	if (status != MStatus::kSuccess) {
+		return;
+	}
+	double xVal = plug.asDouble(&status);
+	if (status != MStatus::kSuccess) {
+		return;
+	}
+	MPlug transformYPlug = transformPlug.child(1, &status);
+	if (status != MStatus::kSuccess) {
+		return;
+	}
+	MPlug transformZPlug = transformPlug.child(2, &status);
+	if (status != MStatus::kSuccess) {
+		return;
+	}
+	double newYVal = sin(xVal);
+	double newZVal = cos(transformZPlug.asDouble() + xVal);
+	transformYPlug.setDouble(newYVal);
+	transformZPlug.setDouble(newZVal);
+}
+
+MStatus uninstallCallback()
+{
+	MStatus status = MMessage::removeCallbacks(TangoNode::callbacks);
+	MGlobal::displayInfo("Removed feature!");
+	return status;
+}
+
+
+void uninstallCallback(MObject& node, void* data)
+{
+	uninstallCallback();
+}
+
+void installCallback(MNodeMessage::AttributeMessage msg,
+	MPlug& plug,
+	MPlug& otherPlug,
+	void* data)
+{
+	if (msg == (MNodeMessage::kConnectionBroken |
+		MNodeMessage::kIncomingDirection |
+		MNodeMessage::kOtherPlugSet)) {
+		uninstallCallback();
+	}
+	if (msg != (MNodeMessage::kConnectionMade |
+		MNodeMessage::kIncomingDirection |
+		MNodeMessage::kOtherPlugSet)) {
+		return;
+	}
+	// NOTE: (sonictk) We check if the node has its message connection connected
+	// first to determine if we should install the real callback onto that node
+	MObject callbackNode = plug.node();
+	MFnDependencyNode fnNode(callbackNode);
+	MPlug cxnPlug = fnNode.findPlug(TangoNode::kIN_TRANSFORM_ATTR_NAME);
+	MPlugArray connectedPlugs;
+	cxnPlug.connectedTo(connectedPlugs, true, false);
+	if (connectedPlugs.length() != 1) {
+		return;
+	}
+	MObject transformNode = connectedPlugs[0].node();
+	if (!transformNode.hasFn(MFn::kTransform)) {
+		return;
+	}
+	// NOTE: (sonictk) Install the callback onto the other node and add it to the
+	// registry of callbacks to track
+	MStatus status;
+	MCallbackId featureCallbackId = MNodeMessage::addAttributeChangedCallback(transformNode,
+		featureCallback,
+		NULL,
+		&status);
+	if (status != MStatus::kSuccess) {
+		return;
+	}
+	TangoNode::callbacks.append(featureCallbackId);
+	MGlobal::displayInfo("Feature installed!");
+
+}
+
+// Registers this callback when this node is created
+void TangoNode::postConstructor()
+{
+	MStatus status;
+	MObject thisNode = thisMObject();
+
+	MCallbackId installId = MNodeMessage::addAttributeChangedCallback(thisNode,
+		installCallback,
+		NULL,
+		&status);
+	if (status != MStatus::kSuccess) {
+		MGlobal::displayError("Unable to install example feature!");
+		uninstallCallback();
+		return;
+	}
+	callbacks.append(installId);
+	MNodeMessage::addNodePreRemovalCallback(thisNode,
+		uninstallCallback,
+		NULL,
+		&status);
+	if (status != MStatus::kSuccess) {
+		MGlobal::displayError("Unable to install example feature!");
+		uninstallCallback();
+		return;
+	}
+}
