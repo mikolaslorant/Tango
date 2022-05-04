@@ -278,6 +278,7 @@ void featureCallback(MNodeMessage::AttributeMessage msg,
 			curveSegment->keyRight->tangentMinus.y,
 			true);
 	}
+	MGlobal::executeCommand("curveUpdate();");
 	MGlobal::displayInfo("Tangents updated.");
 	
 }

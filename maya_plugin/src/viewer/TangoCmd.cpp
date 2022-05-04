@@ -118,6 +118,7 @@ MStatus TangoCmd::redoIt()
     
     MObject transform;
     MSelectionList selectionOfNodes;
+
     selectionOfNodes.add(flagSelList[5]);
     std::string firstTestNOde = flagSelList[5].asChar();
     result = selectionOfNodes.getDependNode(0, transform);   // gets transform of first element of the selection list
@@ -143,6 +144,7 @@ MStatus TangoCmd::redoIt()
     result = dgModCxn.connect(msgPlug, callbackNodeMsgPlug);    // connects callback attributes of TangoNode and the locator transform node
     CHECK_MSTATUS_AND_RETURN_IT(result);
     dgModCxn.doIt();
+
     return result;
 }
 
