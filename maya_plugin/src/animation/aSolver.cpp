@@ -503,7 +503,7 @@ void ASolver::parseConstraintMatrixA(const std::vector<Eigen::Matrix3Xd>& A,
 vec3 State::getCurrentValue() inline const
 {
 	vec3 ret;
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		vec3 tangentPlus = vec3(orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.x, orderedAffectedCurveSegments[i]->keyLeft->tangentPlus.y, 0);
 		vec3 tangentMinus = vec3(orderedAffectedCurveSegments[i]->keyRight->tangentMinus.x, orderedAffectedCurveSegments[i]->keyRight->tangentMinus.y, 0);
