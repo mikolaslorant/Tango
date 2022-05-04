@@ -13,7 +13,7 @@ global proc int drawLocators() {
 	global int $keyRight;
 	global string $locatorsGlobal;
 	global string $selectedNode;
-	
+	$locatorsGlobal = "";
 	string $locatorPoints = "";
 	int $stepSize = ($keyRight - $keyLeft) / 10;
 	if($stepSize == 0)
@@ -27,7 +27,7 @@ global proc int drawLocators() {
 	{
 		float $pos[3] = `getAttr -time $i ($selectedNode + ".t")`;
 		float $ori[3] = `getAttr -time $i ($selectedNode + ".r")`;
-		if($i != $keyLeft && $locatorCnt < 10)
+		if($i != $keyLeft && $locatorCnt < 9)
 		{
 			string $locatorName = "tangoCurveLocator_" + $selectedNode + "_" + $i;
 			//spaceLocator -p $pos[0] $pos[1] $pos[2] -n $locatorName;
