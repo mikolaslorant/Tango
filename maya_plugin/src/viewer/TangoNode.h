@@ -45,6 +45,8 @@ void installCallback(MNodeMessage::AttributeMessage msg,
 	MPlug& otherPlug,
 	void* data);
 
+const enum keyData { KIDX, KNUM, KTIME, KVAL };
+
 class TangoNode : public MPxNode
 {
 public:
@@ -72,18 +74,12 @@ public:
 
 	static MCallbackIdArray callbacks;
 
-private:
-
-	const enum keyData { KIDX, KNUM, KTIME, KVAL};
+	static MStatus splitTransformName(MString name, MString& effectorName, int& frameNumber);
+	static MStatus getTargetParams(MString& effectorName, vec3& targetPoint, int& frameNumber);
+	static void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, double(&leftKey)[4], double(&rightKey)[4]);
 	const static MString curves[];
 	const static int componentsOfCurves[];
 	const static CurveType typesOfCurves[];
-
-	ASolver mSolver;
-	State mTargetState;
-	MStatus splitTransformName(MString name, MString &effectorName, int &frameNumber);
-	MStatus getTargetParams(MString &effectorName, vec3& targetPoint, int &frameNumber);
-	void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, double (&leftKey) [4], double (&rightKey) [4]);
 };
 
 #endif
