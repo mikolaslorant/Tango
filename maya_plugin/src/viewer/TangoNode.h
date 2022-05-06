@@ -75,7 +75,7 @@ public:
 	static MCallbackIdArray callbacks;
 
 	static MStatus splitTransformName(MString name, MString& effectorName, int& frameNumber);
-	static MStatus getTargetParams(MString& effectorName, vec3& targetPoint, int& frameNumber);
+	static MStatus getTargetParams(const MString& triggerLocatorName, MString& effectorName, vec3& targetPoint, int& frameNumber);
 	static void getKeyFrames(const int frameNumber, const MPlug animCurvePlug, double(&leftKey)[4], double(&rightKey)[4]);
 	const static MString curves[];
 	const static int componentsOfCurves[];

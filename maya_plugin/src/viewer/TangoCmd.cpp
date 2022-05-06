@@ -118,11 +118,16 @@ MStatus TangoCmd::redoIt()
     
     MObject transform;
     MSelectionList selectionOfNodes;
-
-    selectionOfNodes.add(flagSelList[5]);
-    std::string firstTestNOde = flagSelList[5].asChar();
+    MObjectArray transformsArray;
+    selectionOfNodes.add(flagSelList[0]);
+    std::string firstTestNode = flagSelList[0].asChar();
     result = selectionOfNodes.getDependNode(0, transform);   // gets transform of first element of the selection list
     CHECK_MSTATUS_AND_RETURN_IT(result);
+    transformsArray.append(transform);
+    //result = selectionOfNodes.getDependNode(0, transform);   // gets transform of first element of the selection list
+    //CHECK_MSTATUS_AND_RETURN_IT(result);
+
+    MDGModifier dgModCxn;   // dgmodifier for callback operations
     if (!transform.hasFn(MFn::kDependencyNode)) {
         MGlobal::displayError("The object specified is not a valid DG node!");
         return MStatus::kInvalidParameter;
@@ -138,7 +143,7 @@ MStatus TangoCmd::redoIt()
         CHECK_MSTATUS_AND_RETURN_IT(result);
         fnNode.addAttribute(msgAttr);   // add callback attribute to locator transform
     }
-    MDGModifier dgModCxn;   // dgmodifier for callback operations
+    //MDGModifier dgModCxn;   // dgmodifier for callback operations
     MPlug msgPlug = fnNode.findPlug("locatorCallBackAttr", false, &result);
     CHECK_MSTATUS_AND_RETURN_IT(result);
     result = dgModCxn.connect(msgPlug, callbackNodeMsgPlug);    // connects callback attributes of TangoNode and the locator transform node

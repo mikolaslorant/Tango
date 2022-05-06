@@ -12,6 +12,7 @@
 #include <maya/MPlug.h>
 #include <maya/MFnMessageAttribute.h>
 #include <maya/MStringArray.h>
+#include <maya/MObjectArray.h>
 #include <sstream>
 
 class TangoCmd : public MPxCommand

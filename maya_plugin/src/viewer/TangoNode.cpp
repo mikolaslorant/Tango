@@ -87,7 +87,7 @@ MStatus TangoNode::splitTransformName(MString name, MString& effectorName, int& 
 	return MS::kSuccess;
 }
 
-MStatus TangoNode::getTargetParams(MString& effectorName, vec3& targetPoint, int& frameNumber) {
+MStatus TangoNode::getTargetParams(const MString &triggerLocatorName, MString& effectorName, vec3& targetPoint, int& frameNumber) {
 	MDagPath nodePath;
 	MSelectionList locatorList;
 	MGlobal::getActiveSelectionList(locatorList);
@@ -98,6 +98,10 @@ MStatus TangoNode::getTargetParams(MString& effectorName, vec3& targetPoint, int
 	}
 	locatorList.getDagPath(0, nodePath);
 	MFnTransform transformFn(nodePath);
+
+	if (triggerLocatorName != transformFn.name()) {
+		return MS::kFailure;
+	}
 
 	if (splitTransformName(transformFn.name(), effectorName, frameNumber) == MS::kFailure) {
 		return MS::kFailure;
@@ -142,6 +146,9 @@ void featureCallback(MNodeMessage::AttributeMessage msg,
 	if (msg != (MNodeMessage::kAttributeSet | MNodeMessage::kIncomingDirection)) {
 		return;
 	}
+
+	MFnTransform locatorNode(plug.node());
+	MString locatorName = locatorNode.name();
 	const char* fullplugName = plug.name().asChar();
 	if (strstr(fullplugName, "translateX") == NULL && strstr(fullplugName, "translateY") == NULL 
 		&& strstr(fullplugName, "translateZ") == NULL) {
@@ -155,7 +162,7 @@ void featureCallback(MNodeMessage::AttributeMessage msg,
 	MString effectorName = "";
 	int frameNumber = -1;
 	vec3 targetPoint;
-	if (TangoNode::getTargetParams(effectorName, targetPoint, frameNumber) == MS::kFailure) {
+	if (TangoNode::getTargetParams(locatorName, effectorName, targetPoint, frameNumber) == MS::kFailure) {
 		return;
 	}
 	State targetState(frameNumber, targetPoint, false);
