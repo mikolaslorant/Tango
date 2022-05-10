@@ -16,8 +16,9 @@
 #include <maya/MStringArray.h>
 #include <list>
 
-#include "TangoCmd.h"
+
 #include "TangoNode.h"
+#include "TangoCmd.h"
 
 MStatus initializePlugin(MObject obj)
 {
@@ -25,18 +26,20 @@ MStatus initializePlugin(MObject obj)
     MFnPlugin plugin(obj, "Tango", "1.0", "Any");
 
     // Register Command
-    status = plugin.registerCommand("TangoCmd", TangoCmd::creator);
+    status = plugin.registerNode(TangoNode::kNODE_NAME, TangoNode::kNODE_ID, TangoNode::creator, TangoNode::initialize);
     if (!status) {
-        status.perror("registerCommand");
+        status.perror("registerNode");
         return status;
     }
+    MGlobal::displayInfo("Registerd Node");
 
-    status = plugin.registerNode("TangoNode", TangoNode::id, TangoNode::creator, TangoNode::initialize);
+    status = plugin.registerCommand(TangoCmd::kCOMMAND_NAME, TangoCmd::creator, TangoCmd::newSyntax);
     if (!status) {
         status.perror("registerCommand");
         return status;
     }
-    
+    MGlobal::displayInfo("Registerd Command");
+
     MGlobal::executeCommand("source \"" + plugin.loadPath() + "/tangoCurve.mel\"");
     
     CHECK_MSTATUS_AND_RETURN_IT(status);
@@ -47,13 +50,13 @@ MStatus uninitializePlugin(MObject obj)
 {
     MStatus   status = MStatus::kSuccess;
     MFnPlugin plugin(obj);
-
+    uninstallCallback();
     status = plugin.deregisterCommand("TangoCmd");
     if (!status) {
         status.perror("deregisterCommand");
         return status;
     }
-    status = plugin.deregisterNode(TangoNode::id);
+    status = plugin.deregisterNode(TangoNode::kNODE_ID);
     CHECK_MSTATUS_AND_RETURN_IT(status);
     return status;
 }

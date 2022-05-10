@@ -1,89 +1,209 @@
+global int $currentTime;
+global int $keyLeft;
+global int $keyRight;
+global float $inKeyTangent[];
+global float $outTangent[];
+global string $selectedNode;
+global string $locatorsGlobal;
+global string $locatorsGlobalArray[];
+global float $locatorPositions[];
 
-global proc getAnimCurves() {
-	print("getAnimCurve is called");
-    string $nodes[] = `ls -selection`;
-	string $cmd = "";
-	
-	for ($node in $nodes)
+
+global proc int drawLocators() {
+	global int $currentTime;
+	global int $keyLeft;
+	global int $keyRight;
+	global string $locatorsGlobal;
+	global string $locatorsGlobalArray[];
+	global string $selectedNode;
+	$locatorsGlobal = "";
+	string $locatorPoints = "";
+	int $stepSize = ($keyRight - $keyLeft) / 10;
+	if($stepSize == 0)
 	{
-		//From each transform node, obtain its shape node and print its name	
-		$currentTime = `currentTime -query`;
-		print("\ncurrentTime:");
-		print $currentTime;
-		
-		string $shapes[] = `listRelatives -shapes $node`;
-		string $animCurves[] = `listConnections -type animCurve $node`;
-		string $editPoints = "";
-		
-		int $keyLeft;
-		int $keyRight;
-		
-		for ($animCurve in $animCurves) {
-			string $query = `nodeType $animCurve`;
-			
-			if (0 == (strcmp("animCurveTL", $query))) {
-				float $keyFrames[] = sort(`keyframe -q $animCurve`);
-				$keyLeft = int($keyFrames[0]);
-				$keyRight = int($keyFrames[size($keyFrames)-1]);
-				int $keyLeftFound = false;
-				int $keyRightFound = false;
-				for( $keyFrame in $keyFrames ) {
-					if ( $keyFrame < $currentTime ) {
-						$keyLeft = $keyFrame;
-						$keyLeftFound = true;
-					}
-					if ( $keyFrame > $currentTime && $keyRightFound == false) {
-						$keyRight = $keyFrame;
-						$keyRightFound = true;
-						break;
-					}
-				}
-				
-				print("\nstartTime:");
-				print $keyLeft;
-				print("\nendTime:");
-				print $keyRight;
-				
-				
-				float $inKeyTangent[] = `keyTangent -t $keyRight -q -inAngle $animCurve`;
-				print("\nIntangents:");
-				print($inKeyTangent);
-				
-				float $outTangent[] = `keyTangent -t $keyLeft -q -outAngle $animCurve`;
-				print("\nOuttangents:");
-				print($outTangent);
-				
-				//print("\nIntangentX:");
-				//print $IntangentX;
-				//print("\nIntangentY:");
-				//print $IntangentY;
-				//print("\nOuttangentX:");
-				//print $OuttangentX;
-				//print("\nOuttangentY:");
-				//print $OuttangentY;
-				
+		return false;
+	}
+	int $locatorCnt = 0;
+	int $i = 0;
+	string $animCurves[] = `listConnections -type animCurve $selectedNode`;
+	for($i = $keyLeft; $i < $keyRight; $i = $i + $stepSize)
+	{
+		float $pos[3] = `getAttr -time $i ($selectedNode + ".t")`;
+		float $ori[3] = `getAttr -time $i ($selectedNode + ".r")`;
+		if($i != $keyLeft && $locatorCnt < 9)
+		{
+			string $locatorName = "tangoCurveLocator_" + $selectedNode + "_" + $i;
+			//spaceLocator -p $pos[0] $pos[1] $pos[2] -n $locatorName;
+			string $locators[] = `spaceLocator -n $locatorName`;
+			setAttr ($locators[0] + ".t") $pos[0] $pos[1] $pos[2];
+			setAttr ($locators[0] + ".r") $ori[0] $ori[1] $ori[2];
+			if ($locatorCnt != 0)
+			{
+				$locatorsGlobal += " ";
 			}
-		}
-		
-		int $i = 0;
-		for($i = $keyLeft; $i <= $keyRight; $i = $i + 10) {
-			$editPoints = $editPoints + " -ep ";
-			for ($animCurve in $animCurves) {
-				string $query = `nodeType $animCurve`;
-					if (0 == (strcmp("animCurveTL", $query))) {
-						float $pos = `getAttr -time $i ($animCurve + ".o")`;
-						$editPoints = ($editPoints + " " + $pos);
-				}
-			}
-		}
-		if($editPoints != "") {
-			$cmd = ("curve " + $editPoints + ";") ;
+			$locatorsGlobal += $locators[0];
+			$locatorsGlobalArray[$locatorCnt] = $locators[0];
+			$locatorPoints = $locatorPoints + " " + $locators[0];
+			$locatorCnt = $locatorCnt + 1;
 		}
 	}
-	if(size($nodes) != 0) {
+
+	float $pos[3] = `getAttr -time $keyRight ($selectedNode + ".t")`;
+	float $ori[3] = `getAttr -time $keyRight ($selectedNode + ".r")`;
+	eval("group -n tangoLocators" + $locatorPoints + ";");
+	return true;
+}
+
+global proc int drawEditCurve() {
+	global string $selectedNode;
+	string $cmd = "";
+	global int $currentTime;
+	global int $keyLeft;
+	global int $keyRight;
+	global float $locatorPositions[];
+
+	string $curvePoints = "";
+	int $stepSize = ($keyRight - $keyLeft) / 10;
+	if($stepSize == 0) {
+		return false;
+	}
+	int $i = 0;
+	int $j = 0;
+	string $animCurves[] = `listConnections -type animCurve $selectedNode`;
+	for($i = $keyLeft; $i < $keyRight; $i = $i + $stepSize) {
+		float $pos[3] = `getAttr -time $i ($selectedNode + ".t")`;
+		float $ori[3] = `getAttr -time $i ($selectedNode + ".r")`;
+		$curvePoints = $curvePoints + " -p ";
+		$curvePoints = ($curvePoints + " " + $pos[0] + " " + $pos[1] + " " + $pos[2]);
+
+		if( $i != $keyLeft ) {
+			$locatorPositions[$j] = $pos[0];
+			$locatorPositions[$j + 1] = $pos[1];
+			$locatorPositions[$j + 2] = $pos[2];
+
+			$j = $j + 3;
+		}
+	}
+
+	float $pos[3] = `getAttr -time $keyRight ($selectedNode + ".t")`;
+
+	$curvePoints = $curvePoints + " -p ";
+	$curvePoints = ($curvePoints + " " + $pos[0] + " " + $pos[1] + " " + $pos[2]);
+	if($curvePoints != "") {
+		if(`objExists tangoEditCurve`)
+		{
+			$cmd = ("curve -r " + $curvePoints + " tangoEditCurve -n tangoEditCurve;") ;
+		}
+		else {
+			$cmd = ("curve " + $curvePoints + " -n tangoEditCurve;") ;
+		}
+		
+		print("cmd: " + $cmd);
+		string $selectedLocator[] = `ls -selection`;
 		eval($cmd);
+		select -d tangoEditCurve;
+		if(`objExists tangoCurve`) {
+			parent tangoEditCurve tangoCurve;
+		}
+		else {
+			group -n tangoCurve tangoLocators tangoEditCurve;
+		}
+		select -d tangoCurve;
+		select $selectedLocator[0];
 	}
-	print("Tango is created by command");
+	return true;
+}
+
+global proc int getKeyFrames() {
+
+	string $nodes[] = `ls -selection`;
+	if(size($nodes) != 1) {
+		return false;
+	}
+	
+	global string $selectedNode;
+	global int $currentTime;
+	global int $keyLeft;
+	global int $keyRight;
+
+	$selectedNode = $nodes[0];
+	print($selectedNode);
+	string $animCurves[] = `listConnections -type animCurve $selectedNode`;
+	
+	// If no animation curves have been generated
+	if(size($animCurves) < 1) {
+		return false;
+	}
+	
+	$currentTime = `currentTime -query`;
+	print("\ncurrentTime:");
+	print $currentTime;
+
+	print($animCurves[0]);
+	float $keyFrames[] = sort(`keyframe -q $animCurves[0]`);
+	$keyLeft = int($keyFrames[0]);
+	$keyRight = int($keyFrames[size($keyFrames)-1]);
+	int $keyLeftFound = false;
+	int $keyRightFound = false;
+	for( $keyFrame in $keyFrames ) {
+		if ( $keyFrame < $currentTime ) {
+			$keyLeft = $keyFrame;
+			$keyLeftFound = true;
+		}
+		if ( $keyFrame > $currentTime && $keyRightFound == false) {
+			$keyRight = $keyFrame;
+			$keyRightFound = true;
+			break;
+		}
+	}
+	print("\nstartTime:");
+	print $keyLeft;
+	print("endTime:");
+	print $keyRight;
+	return true;
+}
+
+global proc curveUpdate() {
+	global float $locatorPositions[];
+	global string $locatorsGlobalArray[];
+	if(`objExists tangoEditCurve`) {
+		delete tangoEditCurve;
+	}
+	print("calling getKeyFrames");
+	//if(getKeyFrames()) {
+	print("drawingeditcurve");
+	drawEditCurve();
+	string $selectedLocator[] = `ls -selection`;
+	int $j = 0;
+	int $i = 0;
+	select -d $selectedLocator[0];
+	for( $i = 0; $i < size($locatorsGlobalArray); $i++ )
+	{
+		//if($locatorsGlobalArray[$i] != $selectedLocator[0])
+		//{
+			$j = $i * 3;
+			setAttr ($locatorsGlobalArray[$i] + ".t") $locatorPositions[$j] $locatorPositions[$j + 1] $locatorPositions[$j + 2];
+		//}
+	}
+	select $selectedLocator[0];
+	//}
+}
+
+global proc generateEditCurve() {
+	global string $locatorsGlobalArray[];
+	global string $locatorsGlobal;
+	if(`objExists tangoCurve`) {
+		delete tangoCurve;
+	}
+	if(getKeyFrames()) {
+		drawLocators();
+		curveUpdate();
+	}
+	for ( $locator in $locatorsGlobalArray ) {
+		print("Created Tango Node");
+		TangoCmd -n $locator;
+	}
+	print("Created Test");
 }
 
 // Create Tango Menu Items
@@ -100,6 +220,6 @@ if(`menuItem -exists tangoNodeMenu`) {
 	deleteUI tangoNodeMenu;
 }
 
-print("Calling getAnimCurve");
+//print("Calling getAnimCurve");
 menu -label "Tango Editor" -tearOff true tangoMenu;
-menuItem -label "Curve Control" -command "getAnimCurves()" tangoCmdMenu;
+menuItem -label "Curve Control" -command "generateEditCurve()" tangoCmdMenu;
